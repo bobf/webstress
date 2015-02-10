@@ -12,5 +12,6 @@ setup(name='WebStress',
         'pyyaml==3.11',
         'pyopenssl==0.14',
         'service_identity==14.0.0',
+        'fake-factory==0.4.2',
        ],
      )
