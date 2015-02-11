@@ -5,28 +5,7 @@ import unittest
 import webstress.client.http
 from webstress.config.parser import Config
 
-from ..support import webserver
-
-config = """
-targets:
-  - url: http://localhost:8000/
-    hits: 10
-    params:
-      - key: arg1
-        value: 10
-      - key: arg1
-        value: 10
-      - key: arg2
-        value:
-          fake: name
-  - url: http://localhost:8000/
-    hits: 10
-    params:
-      - key: arg1
-        value: 10
-      - key: arg1
-        value: 10
-"""
+from ..support.config import standard
 
 class TestHTTPClient(twisted.trial.unittest.TestCase):
     def setUp(self):
@@ -35,7 +14,7 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
         # Local webserver spawned by `make test`
         self.url = "http://localhost:8000/"
 
-        self.config = Config(config)
+        self.config = Config(standard)
 
         for target in self.config.targets:
             self.client.add_target(target)
