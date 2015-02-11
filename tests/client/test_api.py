@@ -3,9 +3,9 @@ import twisted.trial.unittest
 
 from ..support.config import standard
 
-import webstress.client.cli
+import webstress.client.api
 
-class TestCLI(twisted.trial.unittest.TestCase):
+class TestAPI(twisted.trial.unittest.TestCase):
     def setUp(self):
         self.noop = lambda *_, **__: None
 
