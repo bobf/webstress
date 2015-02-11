@@ -9,6 +9,7 @@ setup(name='WebStress',
       packages=['webstress',
                 'webstress.client',
                 'webstress.config',
+                'webstress.interfaces',
                 'webstress.common'],
       scripts=['scripts/webstress'],
       install_requires=[
