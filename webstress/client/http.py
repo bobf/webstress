@@ -7,8 +7,8 @@ class HTTP(object):
         self.targets = []
         self._fetcher = fetcher.Fetcher()
 
-    def add_url(self, url):
-        self.targets.append({"url": url})
+    def add_target(self, target):
+        self.targets.append(target)
 
     def hit(self, times, callback=None):
         self._fetcher.set_complete_callback(callback)

@@ -13,13 +13,13 @@ class Fetcher(object):
         self.targets = []
 
     def add_targets(self, targets):
-        self.targets.extend([dict(x) for x in targets]) # Deep copy
+        self.targets.extend(targets)
 
     def get(self, target, method="GET", headers={}):
-        target["_start_time"] = datetime.now()
+        target._start_time = datetime.now()
         d = self.agent.request(
             'GET',
-            target["url"],
+            target.url,
             Headers(headers),
             None)
         success_callback, complete_callback = self.get_callbacks(target)
@@ -32,16 +32,16 @@ class Fetcher(object):
     def get_callbacks(self, target):
         def success(response):
             if response.code == 200:
-                target["success"] = True
-            target["status_code"] = response.code
+                target.success = True
+            target.status_code = response.code
 
         def complete(*a, **kw):
-            if not target.get("success"):
-                target["success"] = False
-            target["complete"] = True
-            target["duration"] = (datetime.now() - target.pop("_start_time")).total_seconds()
+            if not getattr(target, "success", None):
+                target.success = False
+            target.complete = True
+            target.duration = (datetime.now() - target._start_time).total_seconds()
 
-            if all(x.get("complete") for x in self.targets):
+            if all(getattr(x, "complete", None) for x in self.targets):
                 self.complete()
 
         return success, complete
