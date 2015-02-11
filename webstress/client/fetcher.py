@@ -13,12 +13,14 @@ class Fetcher(object):
         self.targets = []
 
     def add_targets(self, targets):
-        self.targets.extend(targets)
+        for target in targets:
+            for _ in xrange(target.hits):
+                self.targets.append(target)
 
     def get(self, target, method="GET", headers={}):
         target._start_time = datetime.now()
         d = self.agent.request(
-            'GET',
+            method,
             target.url,
             Headers(headers),
             None)
@@ -35,28 +37,19 @@ class Fetcher(object):
                 target.success = True
             target.status_code = response.code
 
-        def complete(*a, **kw):
+        def complete(response):
             if not getattr(target, "success", None):
                 target.success = False
             target.complete = True
             target.duration = (datetime.now() - target._start_time).total_seconds()
 
-            if all(getattr(x, "complete", None) for x in self.targets):
-                self.complete()
+            return target
 
         return success, complete
 
-    def complete(self):
-        self.complete_callback(self.targets)
-
-    def gather_deferreds(self, reactor):
-        d = Deferred()
+    def results(self):
         d = defer.gatherResults(self.get(target) for target in self.targets)
         return d
 
     def set_complete_callback(self, callback):
         self.complete_callback = callback
-
-    def run(self):
-        react(self.gather_deferreds)
-

@@ -34,8 +34,15 @@ class Config(object):
 
 
 class Target(object):
+    def __repr__(self):
+        return "Target: <success: %(success)s, status: %(status)s>" % dict(
+            success=self.success,
+            status=self.status_code
+        )
     def __init__(self, target):
         self._target = target
+        self.success = None
+        self.status_code = None
         self.params = [Param(x) for x in target["params"]]
         self.hits = target["hits"]
 

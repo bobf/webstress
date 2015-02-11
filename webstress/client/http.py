@@ -10,10 +10,7 @@ class HTTP(object):
     def add_target(self, target):
         self.targets.append(target)
 
-    def hit(self, times, callback=None):
-        self._fetcher.set_complete_callback(callback)
+    def hit(self):
+        self._fetcher.add_targets(self.targets)
 
-        for _ in xrange(times):
-            self._fetcher.add_targets(self.targets)
-
-        self._fetcher.run()
+        return self._fetcher.results()

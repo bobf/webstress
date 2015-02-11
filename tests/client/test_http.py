@@ -1,4 +1,6 @@
 import twisted.trial.unittest
+from twisted.internet.defer import inlineCallbacks
+import unittest
 
 import webstress.client.http
 from webstress.config.parser import Config
@@ -30,32 +32,34 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
     def setUp(self):
         self.client = webstress.client.http.HTTP()
 
+        # Local webserver spawned by `make test`
         self.url = "http://localhost:8000/"
+
         self.config = Config(config)
 
-        self.webserver = webserver.WebServer()
-
-    def tearDown(self):
-        self.webserver.kill()
-
-    def test_everything_at_once_because_i_hate_twisted(self):
         for target in self.config.targets:
             self.client.add_target(target)
 
-        def callback(results):
-            self.assertTrue(
-                hasattr(results[-1], 'duration')
-            )
+    @inlineCallbacks
+    def test_records_request_duration(self):
+        result = yield self.client.hit()
 
-            self.assertIsInstance(
-                results[-1].success, bool
-            )
+        self.assertTrue(
+            hasattr(result[-1], 'duration')
+        )
 
-            self.assertEquals(
-                results[-1].status_code, 200
-            )
+    @inlineCallbacks
+    def test_records_status_code(self):
+        result = yield self.client.hit()
 
-        self.assertRaises(
-            SystemExit,
-            lambda: self.client.hit(5, callback=callback)
+        self.assertTrue(
+            result[-1].status_code, 200
+        )
+
+    @inlineCallbacks
+    def test_gives_correct_number_of_results(self):
+        result = yield self.client.hit()
+
+        self.assertEquals(
+            len(result), 20
         )
