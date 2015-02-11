@@ -18,5 +18,3 @@ targets:
       - key: arg1
         value: 10
 """
-
-
