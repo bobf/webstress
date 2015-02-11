@@ -15,13 +15,13 @@ class TestAPI(twisted.trial.unittest.TestCase):
         def each_callback(result):
             fired['fired'] = True
 
-        results = yield webstress.client.cli.run(standard, each_callback=each_callback)
+        results = yield webstress.client.api.run(standard, each_callback=each_callback)
 
         self.assertTrue(fired['fired'])
 
     @inlineCallbacks
     def test_results_have_actual_url(self):
-        results = yield webstress.client.cli.run(
+        results = yield webstress.client.api.run(
             standard, each_callback=self.noop)
 
         # Confirm fake-generated data is stored against individual result
