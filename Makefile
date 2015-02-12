@@ -15,3 +15,11 @@ install-virtualenv:
 	virtualenv .
 	bin/pip install .
 
+.PHONY: run-web
+run-web:
+	if [ -f "bin/twistd" ]; then bin/twistd -n webstress; else twistd -n webstress; fi
+
+.PHONY: run-web-daemonize
+run-web-daemonize:
+	if [ -f "bin/twistd" ]; then bin/twistd webstress; else twistd webstress; fi
+
