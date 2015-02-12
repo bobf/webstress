@@ -35,7 +35,11 @@ class TransportElement(athena.LiveElement):
 
         self.callRemote(method, args, kwargs)
 
+    @athena.expose
     def receive(self, argument):
+        self.build_responses(argument)
+
+    def build_responses(self, argument):
         params = json.loads(argument)
         # We expect strict API compatibility:
         method = params["method"]
@@ -48,7 +52,7 @@ class TransportElement(athena.LiveElement):
 
         for delegate in self._delegates:
             try:
-                d = maybeDeferred(delegate._call, method, *args, **kwargs)
+                d = maybeDeferred(delegate._call, method, args, kwargs)
                 def make_response(result):
                     return Response(delegate, result)
 
@@ -62,9 +66,9 @@ class TransportElement(athena.LiveElement):
                         "kwargs: %s" % (method, args, kwargs))
                 log.msg(e)
 
+        # We only really need this for testing
         return responses
 
-    athena.expose(receive)
 
 class MyPage(athena.LivePage):
     docFactory = loaders.stan(T.html[

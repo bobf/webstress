@@ -1,3 +1,5 @@
+import json
+
 import urllib
 
 class Target(object):
@@ -42,6 +44,10 @@ class Result(object):
         self.url = kwargs["url"]
         self.status_code = kwargs["status_code"]
 
+    def to_json(self):
+        return dict(
+                (unicode(x), unicode(getattr(self, x)))
+                for x in ["success", "duration", "url", "status_code"])
 
 class Response(object):
     def __repr__(self):

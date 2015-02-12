@@ -41,7 +41,7 @@ class TestWeb(twisted.trial.unittest.TestCase):
         transport.register_delegate(self.delegate_1)
         transport.register_delegate(self.delegate_2)
 
-        responses = yield gatherResults(transport.receive(self.received_json))
+        responses = yield gatherResults(transport.build_responses(self.received_json))
 
         self.assertTrue(self.delegate_2.called)
         self.assertTrue(self.delegate_1.called)
@@ -59,9 +59,7 @@ class TestWeb(twisted.trial.unittest.TestCase):
              "kwargs": {'targets': ['test1']}}
         )
 
-        delegate._transport.send = MagicMock(return_value=None)
-
-        responses = yield gatherResults(transport.receive(json))
+        responses = yield gatherResults(transport.build_responses(json))
 
         self.assertTrue(delegate.called)
         self.assertTrue(any(x.delegate is delegate for x in responses))

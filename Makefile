@@ -17,9 +17,11 @@ install-virtualenv:
 
 .PHONY: run-web
 run-web:
-	if [ -f "bin/twistd" ]; then bin/twistd -n webstress; else twistd -n webstress; fi
+	kill `cat twistd.pid 2> /dev/null` >/dev/null 2>&1 || true
+	if [ -f "bin/twistd" ]; then bin/twistd -n webstress --config-dir tests/support/configs; else twistd -n webstress; fi
 
 .PHONY: run-web-daemonize
 run-web-daemonize:
-	if [ -f "bin/twistd" ]; then bin/twistd webstress; else twistd webstress; fi
+	kill `cat twistd.pid 2> /dev/null` >/dev/null 2>&1 || true
+	if [ -f "bin/twistd" ]; then bin/twistd webstress --config-dir tests/support/configs; else twistd webstress; fi
 

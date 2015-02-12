@@ -1,4 +1,5 @@
 import webstress.client.api
+from twisted.internet.defer import Deferred
 
 def expose(f):
     f.exposed = True
@@ -21,7 +22,7 @@ class Delegate(object):
     def __init__(self):
         self.called = False
 
-    def _call(self, method, *args, **kwargs):
+    def _call(self, method, args, kwargs):
         for handler in self._handlers:
             if handler.__name__ == method:
                 response = handler(self, *args, **kwargs)
@@ -35,10 +36,10 @@ class StressTestDelegate(Delegate):
     def launch_test(self, targets):
         targets = [webstress.configuration.by_name(x) for x in targets]
         def each_callback(result):
-            self._transport.send("result", result)
+            self._transport.send("result", result.to_json())
             return result
         def all_callback(results):
-            self._transport.send("all_results", results)
+            self._transport.send("all_results", [x.to_json() for x in results])
             return results
 
         d = webstress.client.api.launch_tests(each_callback, targets=targets)
