@@ -1,8 +1,8 @@
 // import Nevow.Athena
 
-MyModule.MyWidget = Nevow.Athena.Widget.subclass('MyModule.MyWidget');
+Transport.Dispatch = Nevow.Athena.Widget.subclass('Transport.Dispatch');
 
-MyModule.MyWidget.methods(
+Transport.Dispatch.methods(
     function result(self, argument) {
         document.getElementById('athena:1').innerHTML += "<br/>Duration: " + argument[0].duration
         return argument;
@@ -12,7 +12,7 @@ MyModule.MyWidget.methods(
     }
     );
 
-MyModule.MyWidget.method(
+Transport.Dispatch.method(
     'clicked',
     function(self) {
         self.callRemote('receive',

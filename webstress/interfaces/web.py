@@ -17,7 +17,7 @@ delegates = [
 ]
 
 class TransportElement(athena.LiveElement):
-    jsClass = u'MyModule.MyWidget'
+    jsClass = u'Transport.Dispatch'
     docFactory = loaders.stan(T.div(render=T.directive('liveElement'))[
         T.input(type='submit', value='Push me',
             onclick='Nevow.Athena.Widget.get(this).clicked()')])
