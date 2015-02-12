@@ -52,6 +52,7 @@ class TestWeb(twisted.trial.unittest.TestCase):
     def test_stress_test_delegate(self):
         delegate = StressTestDelegate()
         transport = webstress.interfaces.web.TransportElement()
+        transport.send = MagicMock(return_value=None)
         transport.register_delegate(delegate)
         json = dumps(
             {"method": "launch_test",
