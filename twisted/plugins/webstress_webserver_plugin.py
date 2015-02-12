@@ -1,3 +1,6 @@
+import os.path
+import fnmatch
+
 from zope.interface import implements
 
 from twisted.python import usage
@@ -7,24 +10,44 @@ from twisted.application import internet
 from nevow import appserver
 
 import webstress.interfaces.web
+import webstress.client.api
 
 class Options(usage.Options):
-    optParameters = [["port", "p", 1235, "The port number to listen on."]]
+    port_default = webstress.configuration["http_server"]["port"]
+    optParameters = [["port", "p", port_default, "The port number to listen on."],
+                     ["config-dir", "c", None, "Config directory (will load *.yaml)"]]
 
 
+print "HELLO HELL"
+print "HELLO HELL"
 class MyServiceMaker(object):
     implements(IServiceMaker, IPlugin)
     tapname = "webstress"
     description = "HTTP stress tester - web interface"
     options = Options
 
+    print "HELLO HELL"
     def makeService(self, options):
         """
         Construct a TCPServer from a factory defined in myproject.
         """
+        print "HELLO HELL"
         site = appserver.NevowSite(webstress.interfaces.web.MyPage())
-        port = webstress.configuration["http_server"]["port"]
+        port = options.port
+        print "HELLO HELL"
+        if options['config-dir'] is None:
+            raise ValueError("Must specify --config-dir")
+        self.updateConfig(options["config-dir"])
+
         return internet.TCPServer(port, site)
 
+    def updateConfig(self, config_dir):
+        config_strings = []
+        for path in os.listdir(os.path.expanduser(config_dir)):
+            if fnmatch.fnmatch(path, "*.yaml"):
+                log.msg("Loading config: `%s`" % (path,))
+                config_strings.append(open(path).read())
+
+        webstress.client.api.update_config(config_string)
 
 serviceMaker = MyServiceMaker()
