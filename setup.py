@@ -20,6 +20,7 @@ setup(name='WebStress',
         'pyopenssl==0.14',
         'service_identity==14.0.0',
         'fake-factory==0.4.2',
-        'nevow==0.11.1'
+        'nevow==0.11.1',
+        'mock==1.0.1',
        ],
      )

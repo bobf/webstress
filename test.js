@@ -7,3 +7,9 @@ MyModule.MyWidget.methods(
         alert('Echoing ' + argument);
         return argument;
     });
+
+MyModule.MyWidget.method(
+    'clicked',
+    function(self) {
+        self.callRemote('echo', 'hello, world');
+    });

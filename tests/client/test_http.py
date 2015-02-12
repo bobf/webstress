@@ -5,7 +5,7 @@ import unittest
 import webstress.client.http
 from webstress.config.parser import Config
 
-from ..support.config import standard
+from ..support.config import std_sample_config
 
 class TestHTTPClient(twisted.trial.unittest.TestCase):
     def setUp(self):
@@ -14,7 +14,7 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
         # Local webserver spawned by `make test`
         self.url = "http://localhost:8000/"
 
-        self.config = Config(standard)
+        self.config = Config(std_sample_config)
 
         for target in self.config.targets:
             self.client.add_target(target)

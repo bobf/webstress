@@ -7,6 +7,7 @@ class Target(object):
         self.status_code = None
         self.params = [Param(x) for x in target["params"]]
         self.hits = target["hits"]
+        self.name = target.get("name")
 
     @property
     def url(self):
@@ -40,3 +41,13 @@ class Result(object):
         self.duration = kwargs["duration"]
         self.url = kwargs["url"]
         self.status_code = kwargs["status_code"]
+
+
+class Response(object):
+    def __repr__(self):
+        return "delegate: %s, result: %s" % (self.delegate, self.result)
+
+    def __init__(self, delegate, result):
+        self.delegate = delegate
+        self.result = result
+

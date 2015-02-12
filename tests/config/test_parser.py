@@ -3,30 +3,13 @@ import urlparse
 import unittest
 
 import webstress.config.parser
+from webstress.common.exceptions import NonUniqueTargetNames
 
-sample = """\
-targets:
-  - url: http://localhost:8000/
-    hits: 10
-    params:
-      - key: arg1
-        value: 10
-      - key: arg1
-        value: 10
-      - key: arg2
-        value:
-          fake: name
-  - url: http://localhost:8000/
-    hits: 10
-    params:
-      - key: arg1
-        value: 10
-      - key: arg1
-        value: 10
-"""
+from ..support.config import std_sample_config, non_unique_sample_config
+
 class TestConfig(unittest.TestCase):
     def setUp(self):
-        self.config = webstress.config.Config(sample)
+        self.config = webstress.config.Config(std_sample_config)
 
     def test_parse(self):
         self.assertEquals(
@@ -47,4 +30,10 @@ class TestConfig(unittest.TestCase):
         self.assertEquals(
             urlparse.parse_qs(parsed.query),
             {'arg1': ['10', '10']}
+        )
+
+    def test_unique_names(self):
+        self.assertRaises(
+            NonUniqueTargetNames,
+            lambda: webstress.config.Config(non_unique_sample_config)
         )
