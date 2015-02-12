@@ -9,3 +9,8 @@ test-monitor:
 	# Needs fswatch, only tested on OS X
 	fswatch -r -o -e ".pyc$$" -e ".swp$$" webstress tests | xargs -n1 -I{} make test
 
+.PHONY: install-virtualenv
+install-virtualenv:
+	virtualenv .
+	bin/pip install .
+

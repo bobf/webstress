@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import twisted
-
 from setuptools import setup
 
 setup(name='WebStress',
