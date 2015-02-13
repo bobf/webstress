@@ -33,8 +33,9 @@ class Delegate(object):
 
 class StressTestDelegate(Delegate):
     @expose
-    def launch_test(self, targets):
-        targets = [webstress.configuration.by_name(x) for x in targets]
+    def launch_test(self, target_names):
+        targets = [webstress.configuration.by_name(x) for x in target_names]
+
         def each_callback(result):
             self._transport.send("result", result.to_json())
             return result

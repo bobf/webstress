@@ -10,7 +10,7 @@ Transport.Dispatch.methods(
     function all_results(self, argument) {
         init_results();
         for (var i=0; i++; i < argument[0].length) {
-            update(argument[0][i]);
+            update(argument[0][i], i==argument[0].length-1);
         }
         return argument;
     }
@@ -23,7 +23,7 @@ Transport.Dispatch.method(
             JSON.stringify({
                 method: 'launch_test',
                 args: [],
-                kwargs: {targets: ["target_from_config_file"]}
+                kwargs: {target_names: ["target_from_config_file"]}
             }));
     });
 
@@ -38,7 +38,7 @@ var init_results = function () {
 
 init_results();
 
-var update = function (result) {
+var update = function (result, is_final) {
     results.total_duration += parseFloat(result.duration);
     results.count++;
     results.average_duration = results.total_duration / results.count;
@@ -51,7 +51,7 @@ var update = function (result) {
     }
 
     var average_html = "<div>Average duration: " + results.average_duration + "</div>";
-    if (results.count % 10 === 0) {
+    if (is_final || results.count % 10 === 0) {
         my_div.innerHTML = average_html + status_html;
     }
 };

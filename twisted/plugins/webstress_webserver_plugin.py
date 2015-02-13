@@ -35,16 +35,20 @@ class MyServiceMaker(object):
         if not options["config-dir"]:
             raise usage.UsageError("Must provide --config-dir")
 
-        self.updateConfig(options["config-dir"])
+        self.config_dir = options["config-dir"]
+        self.update_config()
 
         return internet.TCPServer(port, site)
 
-    def updateConfig(self, config_dir):
+    def update_config(self):
+        webstress.client.api.reload_config = self.update_config # Is this insane
+
         config_strings = []
-        for path in os.listdir(os.path.expanduser(config_dir)):
+        for path in os.listdir(os.path.expanduser(self.config_dir)):
             if fnmatch.fnmatch(path, "*.yaml"):
-                log.msg("Loading config: `%s`" % (path,))
-                config_strings.append(open(os.path.join(config_dir, path)).read())
+                full_path = os.path.join(self.config_dir, path)
+                log.msg("Loading config: `%s`" % (full_path,))
+                config_strings.append(open(full_path).read())
 
         webstress.client.api.update_config('\n'.join(config_strings))
 
