@@ -45,3 +45,15 @@ targets:
       - key: arg1
         value: 10
 """
+
+params_in_url_and_specified_config = """
+targets:
+  - name: test1
+    url: http://localhost:8000/?foo=bar&bar=baz
+    hits: 10
+    params:
+      - key: arg1
+        value: 10
+      - key: arg2
+        value: 20
+"""

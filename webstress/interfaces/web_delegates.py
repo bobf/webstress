@@ -1,5 +1,9 @@
 import webstress.client.api
+import webstress.config.parser
+
 from twisted.internet.defer import Deferred
+from twisted.internet import defer
+from twisted.python import log
 
 def expose(f):
     f.exposed = True
@@ -28,14 +32,26 @@ class Delegate(object):
                 response = handler(self, *args, **kwargs)
                 self.called = True
                 return response
-
+        log.msg("Unhandled method: <%r> on %r" % (method, self))
 
 
 class StressTestDelegate(Delegate):
     @expose
     def launch_test(self, target_names):
+        ## DEBUG
+        #webstress.client.api.reload_config()
+
         targets = [webstress.configuration.by_name(x) for x in target_names]
 
+        return self.make_test_deferred(targets)
+
+    @expose
+    def launch_test_from_config(self, config_string):
+        config = webstress.config.parser.Config(config_string)
+
+        return self.make_test_deferred(config.targets)
+
+    def make_test_deferred(self, targets):
         def each_callback(result):
             self._transport.send("result", result.to_json())
             return result

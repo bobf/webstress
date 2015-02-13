@@ -5,7 +5,9 @@ import unittest
 import webstress.config.parser
 from webstress.common.exceptions import NonUniqueTargetNames
 
-from ..support.config import std_sample_config, non_unique_sample_config
+from ..support.config import (std_sample_config,
+                              non_unique_sample_config,
+                              params_in_url_and_specified_config)
 
 class TestConfig(unittest.TestCase):
     def setUp(self):
@@ -37,3 +39,9 @@ class TestConfig(unittest.TestCase):
             NonUniqueTargetNames,
             lambda: webstress.config.Config(non_unique_sample_config)
         )
+
+    def test_url_generation_correctly_concatenates_params(self):
+        config = webstress.config.Config(params_in_url_and_specified_config)
+        self.assertEqual(
+            config.targets[0].url,
+            "http://localhost:8000/?foo=bar&bar=baz&arg1=10&arg2=20")

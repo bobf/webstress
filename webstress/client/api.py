@@ -1,10 +1,8 @@
-import sys
-
 import webstress.config.parser
 import webstress.client.http
 
 def reload_config():
-    raise  NotImplemented("Must be set by whichever interface is used")
+    raise  NotImplementedError("Must be set by whichever interface is used")
 
 def run(config_string, each_callback=None):
     update_config(config_string)

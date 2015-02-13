@@ -37,9 +37,12 @@ class TransportElement(athena.LiveElement):
 
     @athena.expose
     def receive(self, argument):
-        self.build_responses(argument)
+        self.build_and_execute_responses(argument)
 
-    def build_responses(self, argument):
+        # Let delegates handle dispatch
+        return None
+
+    def build_and_execute_responses(self, argument):
         params = json.loads(argument)
         # We expect strict API compatibility:
         method = params["method"]
@@ -51,20 +54,12 @@ class TransportElement(athena.LiveElement):
         responses = []
 
         for delegate in self._delegates:
-            try:
-                d = maybeDeferred(delegate._call, method, args, kwargs)
-                def make_response(result):
-                    return Response(delegate, result)
+            d = maybeDeferred(delegate._call, method, args, kwargs)
+            def make_response(result):
+                return Response(delegate, result)
 
-                d.addCallback(make_response)
-                responses.append(d)
-
-            except AttributeError:
-                continue
-            except TypeError, e:
-                log.msg("Ignoring TypeError for method `%s`, args: %s, "
-                        "kwargs: %s" % (method, args, kwargs))
-                log.msg(e)
+            d.addCallback(make_response)
+            responses.append(d)
 
         # We only really need this for testing
         return responses

@@ -1,5 +1,5 @@
 import json
-
+import urlparse
 import urllib
 
 class Target(object):
@@ -7,15 +7,18 @@ class Target(object):
         self._target = target
         self.success = None
         self.status_code = None
-        self.params = [Param(x) for x in target["params"]]
+        self.params = [Param(x) for x in target.get("params", [])]
         self.hits = target["hits"]
         self.name = target.get("name")
 
     @property
     def url(self):
         url = self._target["url"]
+        parsed = urlparse.urlparse(url)
         params = [(x.key, x.value) for x in self.params]
-        if params:
+        if params and parsed.query:
+            return "%s&%s" % (url, urllib.urlencode(params))
+        elif params:
             return "%s?%s" % (url, urllib.urlencode(params))
         else:
             return url

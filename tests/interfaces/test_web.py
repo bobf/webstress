@@ -1,9 +1,10 @@
 from json import dumps
 from mock import MagicMock
 
-from twisted.internet.defer import inlineCallbacks, gatherResults
+from twisted.internet.defer import inlineCallbacks, gatherResults, fail
 import twisted.trial.unittest
 from twisted.web.client import getPage
+from twisted.python.failure import Failure
 
 import webstress.interfaces.web
 import webstress.client.api
@@ -41,7 +42,8 @@ class TestWeb(twisted.trial.unittest.TestCase):
         transport.register_delegate(self.delegate_1)
         transport.register_delegate(self.delegate_2)
 
-        responses = yield gatherResults(transport.build_responses(self.received_json))
+        responses = yield gatherResults(
+            transport.build_and_execute_responses(self.received_json))
 
         self.assertTrue(self.delegate_2.called)
         self.assertTrue(self.delegate_1.called)
@@ -57,11 +59,28 @@ class TestWeb(twisted.trial.unittest.TestCase):
         json = dumps(
             {"method": "launch_test",
              "args": [],
-             "kwargs": {'targets': ['test1']}}
+             "kwargs": {'target_names': ['test1']}}
         )
 
-        responses = yield gatherResults(transport.build_responses(json))
+        responses = yield gatherResults(transport.build_and_execute_responses(json))
 
         self.assertTrue(delegate.called)
         self.assertTrue(any(x.delegate is delegate for x in responses))
         self.assertTrue(any(hasattr(x.result[0], "duration") for x in responses))
+
+    @inlineCallbacks
+    def test_cant_execute_unexposed_delegate_methods(self):
+        transport = webstress.interfaces.web.TransportElement()
+        transport.register_delegate(self.delegate_1)
+        transport.register_delegate(self.delegate_2)
+
+        json = dumps(
+            {"method": "i_dont_exist",
+             "args": [],
+             "kwargs": {'target_names': ['test1']}}
+        )
+
+        responses = yield gatherResults(transport.build_and_execute_responses(json))
+
+        self.assertFalse(self.delegate_1.called)
+        self.assertFalse(self.delegate_2.called)

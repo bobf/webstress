@@ -40,13 +40,15 @@ class MyServiceMaker(object):
 
         return internet.TCPServer(port, site)
 
-    def update_config(self):
+    def update_config(self, config_dir=None):
+        config_dir = config_dir or self.config_dir
+
         webstress.client.api.reload_config = self.update_config # Is this insane
 
         config_strings = []
-        for path in os.listdir(os.path.expanduser(self.config_dir)):
+        for path in os.listdir(os.path.expanduser(config_dir)):
             if fnmatch.fnmatch(path, "*.yaml"):
-                full_path = os.path.join(self.config_dir, path)
+                full_path = os.path.join(config_dir, path)
                 log.msg("Loading config: `%s`" % (full_path,))
                 config_strings.append(open(full_path).read())
 
