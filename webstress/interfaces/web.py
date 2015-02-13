@@ -2,9 +2,7 @@
 # https://divmod.readthedocs.org/en/latest/products/nevow/athena/index.html
 import json
 
-from twisted.application import service, internet
-from twisted.internet.defer import Deferred, maybeDeferred
-from twisted.internet import reactor
+from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
 from nevow import athena, loaders, tags as T
@@ -70,7 +68,7 @@ class MyPage(athena.LivePage):
         T.head(render=T.directive('liveglue')),
         T.body(render=T.directive('myElement'))])
 
-    def render_myElement(self, ctx, data):
+    def render_myElement(self, ctx, _data):
         f = TransportElement()
         for delegate in delegates:
             f.register_delegate(delegate)

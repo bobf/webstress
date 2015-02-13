@@ -1,7 +1,7 @@
-from yaml import load, dump
+from yaml import load
 from faker import Faker
 
-from webstress.common.types import Target, Param
+from webstress.common.types import Target
 from webstress.common.exceptions import NonUniqueTargetNames, TargetNotFound
 
 fake = Faker()
@@ -23,7 +23,7 @@ def callify(param):
 
 def callify_param_values(config):
     for target in config["targets"]:
-        for i, param in enumerate(target.get("params", [])):
+        for param in target.get("params", []):
             param = callify(param)
     return config
 

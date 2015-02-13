@@ -1,11 +1,10 @@
 import sys
 
-from twisted.internet import reactor
 import twisted.internet.task
 
 import webstress.client.api
 
-def each_callback(result):
+def each_callback(_result):
     sys.stdout.write(".")
     sys.stdout.flush()
 

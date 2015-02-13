@@ -1,8 +1,6 @@
 import webstress.client.api
 import webstress.config.parser
 
-from twisted.internet.defer import Deferred
-from twisted.internet import defer
 from twisted.python import log
 
 def expose(f):

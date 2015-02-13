@@ -1,5 +1,3 @@
-import urlparse
-
 from . import fetcher
 
 class HTTP(object):
