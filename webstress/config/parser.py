@@ -32,6 +32,7 @@ class Config(object):
     def __init__(self, source):
         self._config = parse(source)
         self.targets = [Target(x) for x in self._config["targets"]]
+        self.DEBUG = False
 
         self._check_unique()
 

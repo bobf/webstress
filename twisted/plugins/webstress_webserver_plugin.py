@@ -19,6 +19,7 @@ class Options(usage.Options):
     optParameters = [["port", "p", port_default, "The port number to listen on.", int],
                      ["config-dir", "c", None, "Config directory (will load *.yaml)"]]
 
+    optFlags = [["debug", None, "Debug mode - developer only"]]
 
 class MyServiceMaker(object):
     implements(IServiceMaker, IPlugin)
@@ -36,6 +37,7 @@ class MyServiceMaker(object):
             raise usage.UsageError("Must provide --config-dir")
 
         self.config_dir = options["config-dir"]
+        self._debug = options["debug"]
         self.update_config()
 
         return internet.TCPServer(port, site)
@@ -52,6 +54,9 @@ class MyServiceMaker(object):
                 log.msg("Loading config: `%s`" % (full_path,))
                 config_strings.append(open(full_path).read())
 
-        webstress.client.api.update_config('\n'.join(config_strings))
+        webstress.client.api.update_config(
+            config_string='\n'.join(config_strings))
+
+        webstress.configuration.DEBUG = self._debug
 
 serviceMaker = MyServiceMaker()

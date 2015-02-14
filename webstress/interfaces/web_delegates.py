@@ -36,8 +36,8 @@ class Delegate(object):
 class StressTestDelegate(Delegate):
     @expose
     def launch_test(self, target_names):
-        ## DEBUG
-        #webstress.client.api.reload_config()
+        if webstress.configuration.DEBUG:
+            webstress.client.api.reload_config()
 
         targets = [webstress.configuration.by_name(x) for x in target_names]
 
