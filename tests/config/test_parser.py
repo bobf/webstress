@@ -3,7 +3,7 @@ import urlparse
 import unittest
 
 import webstress.config.parser
-from webstress.common.exceptions import NonUniqueTargetNames
+from webstress.common.exceptions import NonUniqueTargetNames, NonUniqueConfigNames
 
 from ..support.config import (std_sample_config,
                               non_unique_sample_config,
@@ -36,11 +36,19 @@ class TestConfig(unittest.TestCase):
             {'arg1': ['10', '10']}
         )
 
-    def test_unique_names(self):
+    def test_unique_target_names(self):
         self.assertRaises(
             NonUniqueTargetNames,
             lambda: webstress.config.Config(
                 [{"name": "test", "body": non_unique_sample_config}])
+        )
+
+    def test_unique_config_names(self):
+        self.assertRaises(
+            NonUniqueConfigNames,
+            lambda: webstress.config.Config(
+                [{"name": "test", "body": std_sample_config},
+                 {"name": "test", "body": std_sample_config}])
         )
 
     def test_url_generation_correctly_concatenates_params(self):
