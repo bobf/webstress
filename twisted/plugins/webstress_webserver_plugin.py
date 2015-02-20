@@ -27,6 +27,9 @@ class MyServiceMaker(object):
     description = "HTTP stress tester - web interface"
     options = Options
 
+    def __init__(self):
+        self._debug = False
+
     def makeService(self, options):
         """
         Construct a TCPServer from a factory defined in myproject.
