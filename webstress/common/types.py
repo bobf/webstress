@@ -2,8 +2,10 @@ import urlparse
 import urllib
 
 class Target(object):
-    def __init__(self, target):
+    def __init__(self, owner, target):
         self._target = target
+        # Keep a back ref to which config I came from
+        self.owner = owner
         self.success = None
         self.status_code = None
         self.params = [Param(x) for x in target.get("params", [])]

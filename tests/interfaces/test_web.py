@@ -34,7 +34,8 @@ class TestWeb(twisted.trial.unittest.TestCase):
         self.delegate_1 = Delegate1()
         self.delegate_2 = Delegate2()
 
-        webstress.client.api.update_config(std_sample_config)
+        webstress.client.api.update_config([
+            dict(name="test", body=std_sample_config)])
 
     @inlineCallbacks
     def test_transport_delegates_received_calls(self):
@@ -59,7 +60,12 @@ class TestWeb(twisted.trial.unittest.TestCase):
         json = dumps(
             {"method": "launch_test",
              "args": [],
-             "kwargs": {'target_names': ['test1']}}
+             "kwargs": {
+                'requested_targets': [
+                    {"config": 'test', "name": "test1"}
+                    ]
+                }
+            }
         )
 
         responses = yield gatherResults(transport.build_and_execute_responses(json))

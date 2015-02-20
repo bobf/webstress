@@ -16,6 +16,4 @@ class TestWebstressWebServerPlugin(twisted.trial.unittest.TestCase):
     def test_loads_multiple_configs(self):
         twisted.plugins.webstress_webserver_plugin.serviceMaker.update_config(config_dir=self.config_dir)
 
-        self.assertEqual(
-            webstress.configuration.targets[0].name, "target_from_config_file")
-
+        self.assertTrue(len(webstress.configuration.configs) > 1)

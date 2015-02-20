@@ -23,7 +23,7 @@ Transport.Dispatch.method(
             JSON.stringify({
                 method: 'launch_test',
                 args: [],
-                kwargs: {target_names: ["target_from_config_file"]}
+                kwargs: {requested_targets: [{"name": "sample1_target1", "config": "sample1"}]}
             }));
     });
 

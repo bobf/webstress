@@ -35,11 +35,15 @@ class Delegate(object):
 
 class StressTestDelegate(Delegate):
     @expose
-    def launch_test(self, target_names):
+    def launch_test(self, requested_targets):
         if webstress.configuration.DEBUG:
             webstress.client.api.reload_config()
 
-        targets = [webstress.configuration.by_name(x) for x in target_names]
+        targets = []
+        for request in requested_targets:
+            target = webstress.configuration.target_by_name(
+                request["config"], request["name"])
+            targets.append(target)
 
         return self.make_test_deferred(targets)
 

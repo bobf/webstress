@@ -50,16 +50,21 @@ class MyServiceMaker(object):
 
         webstress.client.api.reload_config = self.update_config # Is this insane
 
-        config_strings = []
+        configs = []
         for path in os.listdir(os.path.expanduser(config_dir)):
             if fnmatch.fnmatch(path, "*.yaml"):
+                name = os.path.basename(path).rpartition(".yaml")[0]
+
                 full_path = os.path.join(config_dir, path)
+
                 log.msg("Loading config: `%s`" % (full_path,))
-                config_strings.append(open(full_path).read())
 
-        webstress.client.api.update_config(
-            config_string='\n'.join(config_strings))
+                configs.append(dict(
+                    name=name,
+                    body=open(full_path).read())
+                )
 
+        webstress.client.api.update_config(configs)
         webstress.configuration.DEBUG = self._debug
 
 serviceMaker = MyServiceMaker()

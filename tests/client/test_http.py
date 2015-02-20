@@ -14,9 +14,10 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
         # Local webserver spawned by `make test`
         self.url = "http://localhost:8000/"
 
-        self.config = Config(std_sample_config)
+        configuration = Config([{"name": "test", "body": std_sample_config}])
+        self.config = configuration.configs["test"]
 
-        for target in self.config.targets:
+        for target in self.config["targets"]:
             self.client.add_target(target)
 
     @inlineCallbacks
