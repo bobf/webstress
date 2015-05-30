@@ -13,6 +13,9 @@ Transport.Dispatch.methods(
             update(argument[0][i], i==argument[0].length-1);
         }
         return argument;
+    },
+    function configs(self, argument) {
+        console.log(argument);
     }
     );
 
@@ -23,8 +26,15 @@ Transport.Dispatch.method(
             JSON.stringify({
                 method: 'launch_test',
                 args: [],
-                kwargs: {requested_targets: [{"name": "sample1_target1", "config": "sample1"}]}
+                kwargs: {requested_targets: [{"name": "get_company", "config": "wcm"}]}
             }));
+    });
+
+Transport.Dispatch.method(
+    'load_configs',
+    function(self) {
+        self.callRemote('receive',
+            JSON.stringify({method: 'list_configs'}));
     });
 
 var results = {};
@@ -51,7 +61,7 @@ var update = function (result, is_final) {
     }
 
     var average_html = "<div>Average duration: " + results.average_duration + "</div>";
-    if (is_final || results.count % 10 === 0) {
+    if (is_final || results.count % 1 === 0) {
         my_div.innerHTML = average_html + status_html;
     }
 };

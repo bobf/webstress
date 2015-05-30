@@ -18,7 +18,10 @@ class TransportElement(athena.LiveElement):
     jsClass = u'Transport.Dispatch'
     docFactory = loaders.stan(T.div(render=T.directive('liveElement'))[
         T.input(type='submit', value='Push me',
-            onclick='Nevow.Athena.Widget.get(this).clicked()')])
+            onclick='Nevow.Athena.Widget.get(this).clicked()'),
+        T.input(type='submit', value='Load Config Data',
+            onclick='Nevow.Athena.Widget.get(this).load_configs()')],
+)
 
     def __init__(self, *args, **kwargs):
         super(TransportElement, self).__init__(*args, **kwargs)

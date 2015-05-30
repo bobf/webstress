@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import yaml
 from faker import Faker
 
@@ -8,9 +10,18 @@ from webstress.common.exceptions import (NonUniqueConfigNames,
 
 fake = Faker()
 
+# http://stackoverflow.com/a/2967461
+from yaml import Loader, SafeLoader
+def construct_yaml_str(self, node):
+    # Override the default string handling function
+    # to always return unicode objects
+    return self.construct_scalar(node)
+Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
+SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
-def parse(source):
-    return callify_param_values(yaml.load(source))
+
+def parse(source, encoding):
+    return callify_param_values(yaml.load(source.decode(encoding)))
 
 def callify(param):
     # Make all param values callable, whether faker-generated or not, for
@@ -31,13 +42,16 @@ def callify_param_values(config):
 
 
 class Config(object):
+    # For reading from a filesystem - is there any sane way to do this ?
+    encoding = 'utf8'
+
     def __init__(self, sources):
         self.configs = {}
         non_unique_names = []
         for source in sources:
-            parsed = parse(source["body"])
+            parsed = parse(source["body"], self.encoding)
 
-            name = source["name"]
+            name = source["name"].decode(self.encoding)
 
             config = dict()
             config["name"] = name
@@ -61,6 +75,19 @@ class Config(object):
                 return target
 
         raise TargetNotFound
+
+    def list_configs(self, to_json=True):
+        configs = []
+
+        if to_json:
+            for config in [self.configs[x] for x in self.configs]:
+                config = dict(config)
+                config["targets"] = [x.to_json() for x in config["targets"]]
+                configs.append(config)
+        else:
+            configs = [self.configs[x] for x in self.configs]
+
+        return configs
 
     def _check_unique(self, config):
         name_set = dict()

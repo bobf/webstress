@@ -1,9 +1,10 @@
 from . import fetcher
 
 class HTTP(object):
-    def __init__(self):
+    def __init__(self, encoding):
         self.targets = []
-        self._fetcher = fetcher.Fetcher()
+        self._fetcher = fetcher.Fetcher(encoding)
+        self.encoding = encoding
 
     def add_target(self, target):
         self.targets.append(target)

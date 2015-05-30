@@ -52,29 +52,6 @@ class TestWeb(twisted.trial.unittest.TestCase):
         self.assertEqual(responses[1].delegate, self.delegate_2)
 
     @inlineCallbacks
-    def test_stress_test_delegate(self):
-        delegate = StressTestDelegate()
-        transport = webstress.interfaces.web.TransportElement()
-        transport.send = MagicMock(return_value=None)
-        transport.register_delegate(delegate)
-        json = dumps(
-            {"method": "launch_test",
-             "args": [],
-             "kwargs": {
-                'requested_targets': [
-                    {"config": 'test', "name": "test1"}
-                    ]
-                }
-            }
-        )
-
-        responses = yield gatherResults(transport.build_and_execute_responses(json))
-
-        self.assertTrue(delegate.called)
-        self.assertTrue(any(x.delegate is delegate for x in responses))
-        self.assertTrue(any(hasattr(x.result[0], "duration") for x in responses))
-
-    @inlineCallbacks
     def test_cant_execute_unexposed_delegate_methods(self):
         transport = webstress.interfaces.web.TransportElement()
         transport.register_delegate(self.delegate_1)

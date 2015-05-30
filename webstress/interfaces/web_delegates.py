@@ -53,6 +53,11 @@ class StressTestDelegate(Delegate):
 
         return self.make_test_deferred(config.targets)
 
+    @expose
+    def list_configs(self):
+        configs = webstress.configuration.list_configs(to_json=True)
+        self._transport.send("configs", *configs)
+
     def make_test_deferred(self, targets):
         def each_callback(result):
             self._transport.send("result", result.to_json())

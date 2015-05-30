@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import urlparse
 import urllib
 
@@ -24,6 +26,15 @@ class Target(object):
         else:
             return url
 
+    def to_json(self):
+        attribs = ["owner", "success", "status_code", "hits", "name"]
+        obj = dict(
+            (x, getattr(self, x))
+            for x in attribs)
+
+        obj["params"] = [x.to_json() for x in self.params]
+
+        return obj
 
 class Param(object):
     def __init__(self, param):
@@ -33,6 +44,9 @@ class Param(object):
     @property
     def value(self):
         return self._param["value_func"]()
+
+    def to_json(self):
+        return {"key": self.key, "value": self.value}
 
 
 class Result(object):
@@ -50,7 +64,7 @@ class Result(object):
 
     def to_json(self):
         return dict(
-                (unicode(x), unicode(getattr(self, x)))
+                (x, getattr(self, x))
                 for x in ["success", "duration", "url", "status_code"])
 
 class Response(object):

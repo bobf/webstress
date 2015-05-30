@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from datetime import datetime
 
 from twisted.internet import reactor
@@ -9,10 +11,11 @@ from webstress.common.types import Result
 
 
 class Fetcher(object):
-    def __init__(self):
+    def __init__(self, encoding):
         self.agent = Agent(reactor)
         self.each_callback = None
         self.targets = []
+        self.encoding = encoding
 
     def add_targets(self, targets):
         for target in targets:
@@ -25,8 +28,8 @@ class Fetcher(object):
         target.start_time = datetime.now()
         url = target.url
         d = self.agent.request(
-            method,
-            url,
+            method.encode(self.encoding),
+            url.encode(self.encoding),
             Headers(headers),
             None)
         success_callback, complete_callback = self.get_callbacks(target)

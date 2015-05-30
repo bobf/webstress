@@ -18,7 +18,7 @@ def launch_tests(each_callback, targets=None, all=False):
         for config in webstress.configuration.configs.values():
             targets.extend(config["targets"])
 
-    http = webstress.client.http.HTTP()
+    http = webstress.client.http.HTTP(webstress.configuration.encoding)
     for target in targets:
         http.add_target(target)
 

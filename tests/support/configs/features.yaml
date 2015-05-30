@@ -1,0 +1,26 @@
+targets:
+  - name: target_from_config_file
+    url: http://localhost:8000/
+    hits: 10
+    params:
+      - key: arg1
+        value: 10
+      - key: arg1
+        value: 10
+      - key: arg2
+        value:
+          fake: name
+
+  - name: target_without_params
+    url: http://localhost:8000/
+    hits: 10
+
+  - name: target_with_params_and_url_params
+    url: http://localhost:8000?arg1=foo&arg2=bar
+    params:
+      - key: arg1
+        value: foo
+      - key: arg3
+        value: baz
+    hits: 10
+

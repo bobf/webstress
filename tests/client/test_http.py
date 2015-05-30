@@ -9,7 +9,7 @@ from ..support.config import std_sample_config
 
 class TestHTTPClient(twisted.trial.unittest.TestCase):
     def setUp(self):
-        self.client = webstress.client.http.HTTP()
+        self.client = webstress.client.http.HTTP(encoding='utf8')
 
         # Local webserver spawned by `make test`
         self.url = "http://localhost:8000/"
