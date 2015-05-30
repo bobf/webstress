@@ -1,1 +1,16 @@
 *.pyc
+*.log.[0-9]
+*.log
+*.pid
+.Python
+nevow/plugins/dropin.cache
+twisted/plugins/dropin.cache
+WebStress.egg-info/
+_trial_temp/
+bin/
+build/
+dist/
+doc/
+include/
+lib/
+share/
