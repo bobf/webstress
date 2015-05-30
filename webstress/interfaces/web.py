@@ -42,10 +42,10 @@ class TransportElement(athena.LiveElement):
 
     def build_and_execute_responses(self, argument):
         params = json.loads(argument)
-        # We expect strict API compatibility:
+
         method = params["method"]
-        args = params["args"]
-        kwargs = params["kwargs"]
+        args = params.get("args", [])
+        kwargs = params.get("kwargs", {})
 
         log.msg("Athena receive: %s, %s, %s" % (method, args, kwargs))
 
