@@ -1,1 +1,17 @@
 HTTP Stress Testing Client
+
+Development
+===========
+
+Makefile assumes virtualenv installed in current directory, i.e. `bin/twistd`
+should exist.
+
+To run server:
+
+    make run-web
+        or
+    make run-web-daemonize
+
+To run tests:
+
+    make tests
