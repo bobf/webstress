@@ -1,5 +1,7 @@
 // import Nevow.Athena
 
+var WS = WS || {};
+
 Transport.Dispatch = Nevow.Athena.Widget.subclass('Transport.Dispatch');
 
 Transport.Dispatch.methods(

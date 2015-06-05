@@ -5,7 +5,7 @@ import json
 from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
-from nevow import athena, loaders, tags as T
+from nevow import athena, loaders, static, tags as T
 
 from webstress.interfaces.web_delegates import StressTestDelegate
 from webstress.common.types import Response
@@ -65,6 +65,8 @@ class MyPage(athena.LivePage):
     docFactory = loaders.stan(T.html[
         T.head(render=T.directive('liveglue')),
         T.body(render=T.directive('myElement'))])
+
+    child_js = static.File('webstress/static/js/')
 
     def render_myElement(self, ctx, _data):
         f = TransportElement()
