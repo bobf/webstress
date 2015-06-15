@@ -1,6 +1,6 @@
 targets:
   - name: sample2_target1
-    url: http://localhost:8000/
+    base_url: http://localhost:8000/
     hits: 10
     params:
       - key: arg1
@@ -12,7 +12,7 @@ targets:
           fake: name
 
   - name: sample2_target2
-    url: http://localhost:8000/
+    base_url: http://localhost:8000/
     hits: 10
     params:
       - key: arg1

@@ -1,6 +1,6 @@
 // import Nevow.Athena
 
-if (typeof WS == 'undefined') WS = {};
+if (typeof window.WS === 'undefined') window.WS = {};
 
 (function () {
     TransportMaker.Dispatch = Nevow.Athena.Widget.subclass('TransportMaker.Dispatch');

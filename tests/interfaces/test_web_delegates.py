@@ -19,7 +19,7 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
 
 
         self.delegate = StressTestDelegate()
-        self.transport = webstress.interfaces.web.TransportElement()
+        self.transport = webstress.interfaces.web.Transport()
         self.transport.register_delegate(self.delegate)
 
     @inlineCallbacks

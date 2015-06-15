@@ -35,7 +35,7 @@ class Delegate(object):
 
 class StressTestDelegate(Delegate):
     @expose
-    def launch_test(self, requested_targets):
+    def launch_test(self, requested_targets, _uid=None):
         if webstress.configuration.DEBUG:
             webstress.client.api.reload_config()
 
@@ -45,10 +45,10 @@ class StressTestDelegate(Delegate):
                 request["config"], request["name"])
             targets.append(target)
 
-        return self.make_test_deferred(targets)
+        return self.make_test_deferred(targets, _uid)
 
     @expose
-    def launch_test_from_config(self, config_string):
+    def launch_test_from_config(self, config_string, _uid=None):
         config = webstress.config.parser.Config(config_string)
 
         return self.make_test_deferred(config.targets)
@@ -58,12 +58,14 @@ class StressTestDelegate(Delegate):
         configs = webstress.configuration.list_configs(to_json=True)
         self._transport.send("configs", *configs)
 
-    def make_test_deferred(self, targets):
+    def make_test_deferred(self, targets, _uid):
         def each_callback(result):
-            self._transport.send("result", result.to_json())
+            self._transport.send("result", result.to_json(), **{u"_uid": _uid})
             return result
         def all_callback(results):
-            self._transport.send("all_results", [x.to_json() for x in results])
+            self._transport.send("all_results",
+                                 [x.to_json() for x in results],
+                                 **{u"_uid": _uid})
             return results
 
         d = webstress.client.api.launch_tests(each_callback, targets=targets)

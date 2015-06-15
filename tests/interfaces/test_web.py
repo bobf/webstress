@@ -39,7 +39,7 @@ class TestWeb(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_transport_delegates_received_calls(self):
-        transport = webstress.interfaces.web.TransportElement()
+        transport = webstress.interfaces.web.Transport()
         transport.register_delegate(self.delegate_1)
         transport.register_delegate(self.delegate_2)
 
@@ -53,7 +53,7 @@ class TestWeb(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_cant_execute_unexposed_delegate_methods(self):
-        transport = webstress.interfaces.web.TransportElement()
+        transport = webstress.interfaces.web.Transport()
         transport.register_delegate(self.delegate_1)
         transport.register_delegate(self.delegate_2)
 

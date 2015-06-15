@@ -1,6 +1,6 @@
 targets:
   - name: target_from_config_file
-    url: http://localhost:8000/
+    base_url: http://localhost:8000/
     hits: 10
     params:
       - key: arg1
@@ -12,11 +12,11 @@ targets:
           fake: name
 
   - name: target_without_params
-    url: http://localhost:8000/
+    base_url: http://localhost:8000/
     hits: 10
 
   - name: target_with_params_and_url_params
-    url: http://localhost:8000?arg1=foo&arg2=bar
+    base_url: http://localhost:8000?arg1=foo&arg2=bar
     params:
       - key: arg1
         value: foo

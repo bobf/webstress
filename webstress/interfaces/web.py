@@ -79,6 +79,7 @@ class MyPage(athena.LivePage):
         T.body(render=T.directive('transport_maker'))])
 
     child_js = static.File('webstress/static/js/')
+    child_css = static.File('webstress/static/css/')
 
     def render_transport_maker(self, ctx, _data):
         f = TransportMaker()

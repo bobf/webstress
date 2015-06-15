@@ -13,10 +13,11 @@ class Target(object):
         self.params = [Param(x) for x in target.get("params", [])]
         self.hits = target["hits"]
         self.name = target.get("name")
+        self.base_url = target["base_url"]
 
     @property
     def url(self):
-        url = self._target["url"]
+        url = self.base_url
         parsed = urlparse.urlparse(url)
         params = [(x.key, x.value) for x in self.params]
         if params and parsed.query:
@@ -27,7 +28,8 @@ class Target(object):
             return url
 
     def to_json(self):
-        attribs = ["owner", "success", "status_code", "hits", "name"]
+        attribs = ["owner", "success", "status_code",
+                   "hits", "name", "base_url"]
         obj = dict(
             (x, getattr(self, x))
             for x in attribs)
