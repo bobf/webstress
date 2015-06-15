@@ -10,6 +10,7 @@ def _f(*sib):
     return util.sibpath(webstress.__file__, '/'.join(sib))
 
 myPackage = athena.JSPackage({
+    'TransportMaker': _f('static', 'js', 'transport_maker.js'),
     'Transport': _f('static', 'js', 'transport.js'),
     })
 

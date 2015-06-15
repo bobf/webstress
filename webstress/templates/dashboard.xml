@@ -11,12 +11,11 @@
 
 <body>
   <div nevow:render="liveElement">
-    <input type="submit" value="Push me">
-      <athena:handler event="onclick" handler="clicked"/>
-    </input>
-    <input type="submit" value="Load Config Data">
-      <athena:handler event="onclick" handler="load_configs"/>
+    <input class="transport-init" type="hidden" value="Push me">
+      <athena:handler event="onclick" handler="init"/>
     </input>
   </div> <!-- liveElement -->
+  <input type="submit" value="Bob" class="test-button"/>
 </body>
 </html>
+

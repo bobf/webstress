@@ -14,12 +14,24 @@ delegates = [
     StressTestDelegate(),
 ]
 
-class TransportElement(athena.LiveElement):
-    jsClass = u'Transport.Dispatch'
+class TransportMaker(athena.LiveElement):
+    jsClass = u'TransportMaker.Dispatch'
     docFactory = loaders.xmlfile('webstress/templates/dashboard.xml')
 
+    @athena.expose
+    def get_transport(self):
+        t = Transport()
+        for delegate in delegates:
+            t.register_delegate(delegate)
+        t.setFragmentParent(self)
+        return t
+
+class Transport(athena.LiveElement):
+    jsClass = u'Transport.Dispatch'
+    docFactory = loaders.xmlfile('webstress/templates/transport.xml')
+
     def __init__(self, *args, **kwargs):
-        super(TransportElement, self).__init__(*args, **kwargs)
+        super(Transport, self).__init__(*args, **kwargs)
         self._delegates = []
 
     def register_delegate(self, delegate):
@@ -64,18 +76,14 @@ class TransportElement(athena.LiveElement):
 class MyPage(athena.LivePage):
     docFactory = loaders.stan(T.html[
         T.head(render=T.directive('liveglue')),
-        T.body(render=T.directive('myElement'))])
+        T.body(render=T.directive('transport_maker'))])
 
     child_js = static.File('webstress/static/js/')
 
-    def render_myElement(self, ctx, _data):
-        f = TransportElement()
-        for delegate in delegates:
-            f.register_delegate(delegate)
+    def render_transport_maker(self, ctx, _data):
+        f = TransportMaker()
         f.setFragmentParent(self)
         return ctx.tag[f]
 
     def child_(self, ctx):
         return MyPage()
-
-
