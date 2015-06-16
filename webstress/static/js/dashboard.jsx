@@ -50,16 +50,33 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     response_codes = (
                             <ResponseCodes data={this.state.results} />
                     ),
-                    that = this;
+                    that = this,
+                    status;
 
                 // Make this target accessible elsewhere
                 WS.targets[data.owner][data.name] = this;
+
+                switch (this.state.status) {
+                    case WS.COMPLETE:
+                        status = (<span className="complete">Complete</span>);
+                        break;
+                    case WS.INCOMPLETE:
+                        status = (<span className="incomplete">Incomplete</span>);
+                        break;
+                    case WS.WAITING:
+                        status = (<span className="waiting">Waiting</span>);
+                        break;
+                    default:
+                        status = (<span className="inactive">Inactive</span>);
+                }
+
                 return (
                     <div className="target">
                       <div><h2>Name:</h2> {data.name}</div>
                       <input className="run-button"
                              type="button" value="Run Test"
                              onClick={this.run_test} />
+                      <div><h2>Status:</h2> {status}</div>
                       <div><h2>Hits:</h2> {data.hits}</div>
                       <div><h2>URL:</h2> {data.base_url}</div>
                       <div><h2>Params:</h2> {params}</div>
@@ -78,6 +95,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                             [{"name": data.name, "config": data.owner}]}
                     });
                 WS.active_tests[uid] = {target: this};
+                this.setState({status: WS.WAITING});
             },
             componentDidUpdate: function () {
                 $content.do_layout();

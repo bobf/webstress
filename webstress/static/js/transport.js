@@ -3,6 +3,9 @@
 if (typeof window.WS === 'undefined') window.WS = {};
 
 (function () {
+    WS.COMPLETE = 1;
+    WS.INCOMPLETE = 2;
+    WS.WAITING = 3;
     WS.targets = {};
     WS.active_tests = {};
     WS._count = 0;
@@ -31,11 +34,16 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
             results.push(args[0]);
             target.setState({results: results,
-                             average: WS.average_response_time(results)
+                             average: WS.average_response_time(results),
+                             status: WS.INCOMPLETE
                             });
         },
-        function all_results(self, argument) {
-            return argument;
+        function all_results(self, args, kwargs) {
+            var target = WS.active_tests[kwargs._uid].target;
+            target.setState({results: args[0],
+                             average: WS.average_response_time(args[0]),
+                             status: WS.COMPLETE
+                            });
         },
         function configs(self, argument) {
             WS.config_grid.setState({data: argument});
