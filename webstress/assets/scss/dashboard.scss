@@ -5,7 +5,7 @@ $grey: #c2c2c2;
 $white: #fff;
 $black: #000;
 $red: #ed5365;
-
+$sans-serif: courier;
 
 .block {
   display: block;
@@ -67,7 +67,7 @@ body {
           background-color: $grey;
         }
 
-        td {
+        tbody td {
           padding: 5px 8px;
           text-align: right;
         }
@@ -136,6 +136,27 @@ body {
 
         table.target tbody td {
           padding: 2px 5px;
+        }
+
+        table.params {
+          margin-top: 5px;
+          thead th {
+            padding: 5px 8px;
+            font-weight: bold;
+            text-align: center;
+            background-color: $grey;
+          }
+
+          tbody td {
+            padding: 5px 8px;
+            font-family: $sans-serif;
+            font-size: 14px;
+            border-bottom: 1px solid $grey;
+
+            &.name {
+              border-right: 1px solid $grey;
+            }
+          }
         }
       }
     }

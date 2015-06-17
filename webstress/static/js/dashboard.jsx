@@ -129,9 +129,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             render: function () {
                 var data = this.props.data,
-                    params = this.props.data.params.map(function (param) {
-                        return (<Param data={param} />);
-                    }),
+                    params = (
+                        <Params data={this.props.data.params} />
+                    ),
                     response_codes = (
                             <ResponseCodes data={this.state.results} />
                     ),
@@ -164,9 +164,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <td><h2>URL</h2></td>
                         <td><a href={data.base_url}>{data.base_url}</a></td>
                       </tr>
+                      <tr>
+                        <td><h2>Params</h2></td>
+                        <td>{params}</td>
+                      </tr>
                       </tbody>
                       </table>
-                      <div><h2>Params:</h2> {params}</div>
                       {response_codes}
                       {duration_stats}
                     </div>
@@ -180,14 +183,27 @@ if (typeof window.WS === 'undefined') window.WS = {};
             }
 
         }),
-        Param = React.createClass({
+        Params = React.createClass({
             render: function () {
-                var data = this.props.data;
+                var params = this.props.data.map(function (param) {
+                        return (
+                            <tr>
+                              <td className="name">{param.key}</td>
+                              <td>{param.value}</td>
+                            </tr>
+                        );
+                    });
+
                 return (
-                    <div>
-                        <div>Key: {data.key}</div>
-                        <div>Value: {data.value}</div>
-                    </div>
+                    <table className="params">
+                        <thead>
+                            <th>Name</th>
+                            <th>Value</th>
+                        </thead>
+                        <tbody>
+                          {params}
+                        </tbody>
+                    </table>
                 );
             }
         }),
