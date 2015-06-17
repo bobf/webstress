@@ -272,13 +272,22 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <th>Median</th>
                     </thead>
                     <tbody>
-                        <td>{WS.stats.format(data.peak, 2)}</td>
-                        <td>{WS.stats.format(data.nadir, 2)}</td>
-                        <td>{WS.stats.format(data.average, 2)}</td>
-                        <td>{WS.stats.format(data.median, 2)}</td>
+                        <td className={this.get_class(data.peak)}>{WS.stats.format(data.peak, 2)}</td>
+                        <td className={this.get_class(data.nadir)}>{WS.stats.format(data.nadir, 2)}</td>
+                        <td className={this.get_class(data.average)}>{WS.stats.format(data.average, 2)}</td>
+                        <td className={this.get_class(data.median)}>{WS.stats.format(data.median, 2)}</td>
                     </tbody>
                     </table>
                 );
+            },
+            get_class: function (value) {
+                if (value < 1) {
+                    return "low";
+                } else if (value < 5) {
+                    return "medium";
+                } else {
+                    return "high";
+                }
             }
         });
 

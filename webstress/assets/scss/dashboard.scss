@@ -6,6 +6,7 @@ $dark-grey: #a2a2a2;
 $white: #fff;
 $black: #000;
 $red: #ed5365;
+$light-blue: #a9c9de;
 $sans-serif: courier;
 
 .block {
@@ -72,6 +73,18 @@ body {
         tbody td {
           padding: 5px 8px;
           text-align: right;
+
+          &.low {
+            color: $green;
+          }
+
+          &.medium {
+            color: $amber;
+          }
+
+          &.high {
+            color: $red;
+          }
         }
       }
 
@@ -159,6 +172,10 @@ body {
         border-top: 1px solid $grey;
         padding: 5px;
         margin-top: 8px;
+
+        a {
+          color: $light-blue;
+        }
 
         table.target tbody td {
           padding: 2px 5px;
