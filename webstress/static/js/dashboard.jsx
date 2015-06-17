@@ -69,6 +69,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <td><div>{state}</div></td>
                         <td><button className="run-button"
                                  onClick={this.run_test}>Run Test</button></td>
+                        <td>{tps}</td>
                       </tr>
                       </tbody>
                       </table>
@@ -76,9 +77,11 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         {response_codes}
                         {duration_stats}
                       </div>
-                      {tps}
-                      <div>
-                        <h2>Targets ({targets.length})</h2>
+                      <a href="#" ref="targets_link" onClick={this.toggle_targets} className="targets">
+                         <span ref="collapse" className="icon hidden">[-]</span>
+                         <span ref="expand" className="icon">[+]</span>
+                         <span className="wording">Targets ({targets.length})</span></a>
+                      <div ref="targets" className="targets">
                         {targets}
                       </div>
                     </div>
@@ -92,6 +95,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             reset: function () {
                 this.setState(this.getInitialState());
+            },
+            toggle_targets: function () {
+                $(this.refs.collapse.getDOMNode()).toggleClass("hidden");
+                $(this.refs.expand.getDOMNode()).toggleClass("hidden");
+                $(this.refs.targets.getDOMNode()).toggle("fast");
+                $(this.refs.targets_link.getDOMNode()).toggleClass("active");
             },
             run_test: function () {
                 var data = this.props.data,
