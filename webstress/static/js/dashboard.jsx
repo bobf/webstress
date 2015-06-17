@@ -16,7 +16,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Config = React.createClass({
             getInitialState: function () {
-                return {state: WS.INACTIVE, results: [], average: null};
+                return {state: WS.INACTIVE, results: [], duration_stats: null};
             },
             render: function () {
                 var data = this.props.data,
@@ -24,7 +24,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         return (<Target data={target} />);
                     }),
                     response_codes,
-                    state, tps, average;
+                    state, tps, duration_stats;
                 WS.targets[data.name] = {};
 
                 response_codes = (
@@ -52,13 +52,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     tps = '';
                 }
 
-
-                if (this.state.average) {
-                    average = (
-                        <div><h2>Average Duration:</h2> {this.state.average}</div>
+                if (this.state.duration_stats) {
+                    duration_stats = (
+                        <DurationStats data={this.state.duration_stats} />
                         );
                 } else {
-                    average = '';
+                    duration_stats = '';
                 }
 
                 return (
@@ -74,8 +73,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       </tbody>
                       </table>
                       <div className="report">
-                        {average}
                         {response_codes}
+                        {duration_stats}
                       </div>
                       {tps}
                       <div>
@@ -126,7 +125,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Target = React.createClass({
             getInitialState: function () {
-                return {results: [], average: null};
+                return {results: [], duration_stats: null};
             },
             render: function () {
                 var data = this.props.data,
@@ -137,17 +136,17 @@ if (typeof window.WS === 'undefined') window.WS = {};
                             <ResponseCodes data={this.state.results} />
                     ),
                     that = this,
-                    average;
+                    duration_stats;
 
                 // Make this target accessible elsewhere
                 WS.targets[data.owner][data.name] = this;
 
-                if (this.state.average) {
-                    average = (
-                        <div><h2>Average Duration:</h2> {this.state.average}</div>
+                if (this.state.duration_stats) {
+                    duration_stats = (
+                        <DurationStats data={this.state.duration_stats} />
                         );
                 } else {
-                    average = '';
+                    duration_stats = '';
                 }
                 return (
                     <div className="target">
@@ -168,8 +167,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       </tbody>
                       </table>
                       <div><h2>Params:</h2> {params}</div>
-                      {average}
                       {response_codes}
+                      {duration_stats}
                     </div>
                 );
             },
@@ -234,6 +233,27 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     </div>
                     );
                 }
+            }
+        }),
+        DurationStats = React.createClass({
+            render: function () {
+                var data = this.props.data;
+                return (
+                    <table className="duration-stats">
+                    <thead>
+                        <th>Peak</th>
+                        <th>Nadir</th>
+                        <th>Average</th>
+                        <th>Median</th>
+                    </thead>
+                    <tbody>
+                        <td>{WS.stats.format(data.peak, 2)}</td>
+                        <td>{WS.stats.format(data.nadir, 2)}</td>
+                        <td>{WS.stats.format(data.average, 2)}</td>
+                        <td>{WS.stats.format(data.median, 2)}</td>
+                    </tbody>
+                    </table>
+                );
             }
         });
 

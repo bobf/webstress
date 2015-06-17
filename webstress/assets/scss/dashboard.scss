@@ -58,12 +58,26 @@ body {
         margin: 5px 0;
       }
 
+      table.duration-stats {
+        thead th {
+          width: 30px;
+          padding: 5px 8px;
+          text-align: center;
+          font-weight: bold;
+          background-color: $grey;
+        }
+
+        td {
+          padding: 5px 8px;
+          text-align: right;
+        }
+      }
+
       table.results {
-        border-bottom: 1px solid $grey;
         margin: 8px 0;
         thead th {
           font-weight: bold;
-          padding: 2px 8px;
+          padding: 5px 8px;
 
           &.code-4 {
             background-color: $amber;
