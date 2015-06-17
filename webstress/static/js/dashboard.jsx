@@ -47,7 +47,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
 
                 if (data.tps) {
-                    tps = (<div><h2>TPS Throttle:</h2>{data.tps}</div>);
+                    tps = (<div className="tps"><h2>TPS Throttle:</h2>{data.tps}</div>);
                 } else {
                     tps = '';
                 }
@@ -63,14 +63,21 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
                 return (
                     <div className="config grid-item">
-                      <h1 className="config-name">{data.name}</h1>
-                      <input className="run-button"
-                             type="button" value="Run Test"
-                             onClick={this.run_test} />
+                      <table className="test-info">
+                      <tbody>
+                      <tr>
+                        <td><h1 className="config-name">{data.name}</h1></td>
+                        <td><div>{state}</div></td>
+                        <td><button className="run-button"
+                                 onClick={this.run_test}>Run Test</button></td>
+                      </tr>
+                      </tbody>
+                      </table>
+                      <div className="report">
+                        {average}
+                        {response_codes}
+                      </div>
                       {tps}
-                      <div><h2>Status:</h2> {state}</div>
-                      {average}
-                      {response_codes}
                       <div>
                         <h2>Targets ({targets.length})</h2>
                         {targets}
@@ -84,11 +91,16 @@ if (typeof window.WS === 'undefined') window.WS = {};
             componentDidUpdate: function () {
                 $content.do_layout();
             },
+            reset: function () {
+                this.setState(this.getInitialState());
+            },
             run_test: function () {
                 var data = this.props.data,
                     config_uid = WS.get_uid(),
                     target_uid,
                     key, targets = [];
+
+                this.reset();
 
                 WS.active_tests[config_uid] = {config: this};
 
@@ -139,9 +151,22 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
                 return (
                     <div className="target">
-                      <div><h2>Name:</h2> {data.name}</div>
-                      <div><h2>Hits:</h2> {data.hits}</div>
-                      <div><h2>URL:</h2> {data.base_url}</div>
+                      <table className="target">
+                      <tbody>
+                      <tr>
+                        <td><h2>Name</h2></td>
+                        <td>{data.name}</td>
+                      </tr>
+                      <tr>
+                        <td><h2>Hits</h2></td>
+                        <td>{data.hits}</td>
+                      </tr>
+                      <tr>
+                        <td><h2>URL</h2></td>
+                        <td><a href={data.base_url}>{data.base_url}</a></td>
+                      </tr>
+                      </tbody>
+                      </table>
                       <div><h2>Params:</h2> {params}</div>
                       {average}
                       {response_codes}
@@ -198,7 +223,6 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 } else {
                     return (
                     <div>
-                        <h2>Response Codes</h2>
                         <table className="results">
                             <thead>
                                 <tr>{head}</tr>

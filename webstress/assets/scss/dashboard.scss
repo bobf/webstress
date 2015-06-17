@@ -6,6 +6,11 @@ $white: #fff;
 $black: #000;
 $red: #ed5365;
 
+
+.block {
+  display: block;
+}
+
 body {
   font-family: Helvetica;
 
@@ -18,7 +23,9 @@ body {
     }
 
     div.config {
-      border: 1px solid red;
+      border-top: 1px dotted $grey;
+      border-bottom: 1px dotted $grey;
+      width: 30%;
 
       h1.config-name {
         font-size: 20px;
@@ -31,15 +38,32 @@ body {
         display: inline;
       }
 
-      input.run-button {
+      button.run-button {
         margin: 10px 5px;
+        padding: 2px 5px;
+        font-size: 14px;
+      }
+
+      table.test-info {
+        tbody td {
+          padding: 2px 5px;
+        }
+      }
+
+      div.report {
+        padding: 5px;
+      }
+
+      div.tps {
+        margin: 5px 0;
       }
 
       table.results {
         border-bottom: 1px solid $grey;
+        margin: 8px 0;
         thead th {
           font-weight: bold;
-          padding: 2px 5px;
+          padding: 2px 8px;
 
           &.code-4 {
             background-color: $amber;
@@ -61,12 +85,13 @@ body {
         }
         tbody td {
           text-align: center;
-          padding: 2px 5px;
+          padding: 5px 5px;
         }
       }
 
       span.state {
-        padding: 3px 3px;
+        padding: 3px 5px;
+        font-weight: bold;
 
         &.pending {
           background-color: $yellow;
@@ -90,7 +115,14 @@ body {
       }
 
       div.target {
-        border: 1px solid #999;
+        border-left: 1px solid $grey;
+        border-top: 1px solid $grey;
+        padding: 5px;
+        margin-top: 8px;
+
+        table.target tbody td {
+          padding: 2px 5px;
+        }
       }
     }
   }
