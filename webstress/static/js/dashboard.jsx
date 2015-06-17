@@ -84,6 +84,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         "name": target.props.data.name,
                         "uid": target_uid
                     });
+                    target.reset();
                     WS.active_tests[config_uid][target_uid] = {target: target};
                     this.setState({state: WS.WAITING});
                 }
@@ -130,6 +131,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       {response_codes}
                     </div>
                 );
+            },
+            reset: function () {
+                this.setState(this.getInitialState());
             },
             componentDidUpdate: function () {
                 $content.do_layout();
