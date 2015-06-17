@@ -35,20 +35,21 @@ class Delegate(object):
 
 class StressTestDelegate(Delegate):
     @expose
-    def launch_test(self, requested_targets, _uid=None):
+    def launch_test(self, config_name, requested_targets, uid=None):
         if webstress.configuration.DEBUG:
             webstress.client.api.reload_config()
 
         targets = []
         for request in requested_targets:
             target = webstress.configuration.target_by_name(
-                request["config"], request["name"])
+                config_name, request["name"])
+            target.uid = request["uid"]
             targets.append(target)
 
-        return self.make_test_deferred(targets, _uid)
+        return self.make_test_deferred(targets, uid)
 
     @expose
-    def launch_test_from_config(self, config_string, _uid=None):
+    def launch_test_from_config(self, config_string, uid=None):
         config = webstress.config.parser.Config(config_string)
 
         return self.make_test_deferred(config.targets)
@@ -58,17 +59,19 @@ class StressTestDelegate(Delegate):
         configs = webstress.configuration.list_configs(to_json=True)
         self._transport.send("configs", *configs)
 
-    def make_test_deferred(self, targets, _uid):
+    def make_test_deferred(self, targets, uid):
         def each_callback(result):
-            self._transport.send("result", result.to_json(), **{u"_uid": _uid})
-            return result
+            response = {u"result": result.to_json(), u"uid": uid}
+            self._transport.send("result", **response)
+            return response
         def all_callback(results):
-            self._transport.send("all_results",
-                                 [x.to_json() for x in results],
-                                 **{u"_uid": _uid})
-            return results
+            response = {u"result": [x.to_json() for x in results], u"uid": uid}
+            self._transport.send("all_results", **response)
+            return response
 
-        d = webstress.client.api.launch_tests(each_callback, targets=targets)
+        config = webstress.configuration.configs[targets[0].owner]
+
+        d = webstress.client.api.launch_test(config, targets, each_callback=each_callback)
         d.addCallback(all_callback)
 
         return d

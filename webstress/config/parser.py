@@ -55,6 +55,7 @@ class Config(object):
 
             config = dict()
             config["name"] = name
+            config["tps"] = parsed.get("tps")
             config["targets"] = [Target(name, x) for x in parsed["targets"]]
 
             self._check_unique(config)

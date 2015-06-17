@@ -1,42 +1,75 @@
+$yellow: #fce353;
+$amber: #e8a633;
+$green: #4c8f39;
+$grey: #c2c2c2;
+$white: #fff;
+$black: #000;
+
 body {
   font-family: Helvetica;
-}
 
-div.grid {
-  margin-left: 10px;
-  margin-top: 10px;
-}
+  div.grid {
+    margin-left: 10px;
+    margin-top: 10px;
 
-div.config {
-  border: 1px solid red;
-}
+    div.grid-item {
+      margin-bottom: 10px;
+    }
 
-div.config h1.config-name {
-  font-size: 20px;
-  font-weight: bold;
-}
+    div.config {
+      border: 1px solid red;
 
-div.config h2 {
-  font-size: 16px;
-  font-weight: bold;
-  display: inline;
-}
+      h1.config-name {
+        font-size: 20px;
+        font-weight: bold;
+      }
 
-div.grid-item {
-  margin-bottom: 10px;
-}
+      h2 {
+        font-size: 16px;
+        font-weight: bold;
+        display: inline;
+      }
 
-div.target {
-  border: 1px solid #999;
-}
 
-input.run-button {
-  margin: 10px 5px;
-}
+      input.run-button {
+        margin: 10px 5px;
+      }
 
-table.results thead th {
-  font-weight: bold;
-}
+      span.state {
+        padding: 3px 3px;
 
-table.results tbody td {
+        &.pending {
+          background-color: $yellow;
+          color: $black;
+        }
+
+        &.complete {
+          background-color: $green;
+          color: $white;
+        }
+
+        &.waiting {
+          background-color: $amber;
+          color: $black;
+        }
+
+        &.inactive {
+          background-color: $grey;
+          color: $black;
+        }
+      }
+
+      div.target {
+        border: 1px solid #999;
+
+        table.results {
+          thead th {
+            font-weight: bold;
+          }
+          tbody td {
+          }
+        }
+      }
+    }
+  }
 }

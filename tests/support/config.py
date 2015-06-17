@@ -81,3 +81,11 @@ targets:
       - key: arg2
         value: 20
 """
+
+tps_config = """
+tps: 5
+targets:
+  - name: test
+    base_url: http://localhost:8000/
+    hits: 10
+"""

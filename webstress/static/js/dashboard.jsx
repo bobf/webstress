@@ -15,16 +15,47 @@ if (typeof window.WS === 'undefined') window.WS = {};
             }
         }),
         Config = React.createClass({
+            getInitialState: function () {
+                return {state: WS.INACTIVE}
+            },
             render: function () {
                 var data = this.props.data,
                     targets = data.targets.map(function (target) {
                         return (<Target data={target} />);
-                    });
+                    }),
+                    state, tps;
                 WS.targets[data.name] = {};
+
+                switch (this.state.state) {
+                    case WS.COMPLETE:
+                        state = (<span className="state complete">Complete</span>);
+                        break;
+                    case WS.PENDING:
+                        state = (<span className="state pending">Pending</span>);
+                        break;
+                    case WS.WAITING:
+                        state = (<span className="state waiting">Waiting</span>);
+                        break;
+                    case WS.INACTIVE:
+                        state = (<span className="state inactive">Inactive</span>);
+                        break;
+                }
+
+                if (data.tps) {
+                    tps = (<div><h2>TPS Throttle:</h2>{data.tps}</div>);
+                } else {
+                    tps = '';
+                }
+
                 return (
                     <div className="config grid-item">
                       <h1 className="config-name">{data.name}</h1>
+                      {{tps}}
+                      <div><h2>Status:</h2> {state}</div>
                       <div>
+                        <input className="run-button"
+                               type="button" value="Run Test"
+                               onClick={this.run_test} />
                         <h2>Targets ({targets.length})</h2>
                         {targets}
                       </div>
@@ -36,66 +67,69 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             componentDidUpdate: function () {
                 $content.do_layout();
-            }
+            },
+            run_test: function () {
+                var data = this.props.data,
+                    config_uid = WS.get_uid(),
+                    target_uid,
+                    key, targets = [];
+
+                WS.active_tests[config_uid] = {config: this};
+
+                for (key in WS.targets[data.name]) {
+                    if (!WS.targets[data.name].hasOwnProperty(key)) continue;
+                    target_uid = WS.get_uid();
+                    target = WS.targets[data.name][key];
+                    targets.push({
+                        "name": target.props.data.name,
+                        "uid": target_uid
+                    });
+                    WS.active_tests[config_uid][target_uid] = {target: target};
+                    this.setState({state: WS.WAITING});
+                }
+
+                WS.call_remote("launch_test",
+                    {kwargs: {uid: config_uid,
+                              config_name: data.name,
+                              requested_targets: targets}
+                });
+            },
         }),
         Target = React.createClass({
             getInitialState: function () {
                 return {results: [], average: null};
             },
             render: function () {
-                var data = this.props.data;
-                var params = this.props.data.params.map(function (param) {
+                var data = this.props.data,
+                    params = this.props.data.params.map(function (param) {
                         return (<Param data={param} />);
                     }),
                     response_codes = (
                             <ResponseCodes data={this.state.results} />
                     ),
                     that = this,
-                    status;
+                    average;
 
                 // Make this target accessible elsewhere
                 WS.targets[data.owner][data.name] = this;
 
-                switch (this.state.status) {
-                    case WS.COMPLETE:
-                        status = (<span className="complete">Complete</span>);
-                        break;
-                    case WS.INCOMPLETE:
-                        status = (<span className="incomplete">Incomplete</span>);
-                        break;
-                    case WS.WAITING:
-                        status = (<span className="waiting">Waiting</span>);
-                        break;
-                    default:
-                        status = (<span className="inactive">Inactive</span>);
+                if (this.state.average) {
+                    average = (
+                        <div><h2>Average Duration:</h2> {this.state.average}</div>
+                        );
+                } else {
+                    average = '';
                 }
-
                 return (
                     <div className="target">
                       <div><h2>Name:</h2> {data.name}</div>
-                      <input className="run-button"
-                             type="button" value="Run Test"
-                             onClick={this.run_test} />
-                      <div><h2>Status:</h2> {status}</div>
                       <div><h2>Hits:</h2> {data.hits}</div>
                       <div><h2>URL:</h2> {data.base_url}</div>
                       <div><h2>Params:</h2> {params}</div>
-                      <div><h2>Average Duration:</h2> {this.state.average || ''}</div>
+                      {average}
                       {response_codes}
                     </div>
                 );
-            },
-            run_test: function () {
-                var data = this.props.data,
-                    uid = WS.get_uid();
-                WS.call_remote("launch_test",
-                    {kwargs:
-                        {_uid: uid,
-                         requested_targets:
-                            [{"name": data.name, "config": data.owner}]}
-                    });
-                WS.active_tests[uid] = {target: this};
-                this.setState({status: WS.WAITING});
             },
             componentDidUpdate: function () {
                 $content.do_layout();
@@ -138,7 +172,10 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     row.push(<td>{results[i][1]}</td>);
                 }
 
-                return (
+                if (!results.length) {
+                    return (<div></div>);
+                } else {
+                    return (
                     <div>
                         <h2>Response Codes</h2>
                         <table className="results">
@@ -148,7 +185,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                             </tbody>
                         </table>
                     </div>
-                );
+                    );
+                }
             }
         });
 

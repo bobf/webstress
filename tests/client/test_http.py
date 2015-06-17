@@ -1,11 +1,12 @@
 import twisted.trial.unittest
 from twisted.internet.defer import inlineCallbacks
 import unittest
+import datetime
 
 import webstress.client.http
 from webstress.config.parser import Config
 
-from ..support.config import std_sample_config
+from ..support.config import std_sample_config, tps_config
 
 class TestHTTPClient(twisted.trial.unittest.TestCase):
     def setUp(self):

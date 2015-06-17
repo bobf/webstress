@@ -7,22 +7,25 @@ def reload_config():
 def run(configs, each_callback=None):
     update_config(configs)
 
-    return launch_tests(each_callback, all=True)
+    return launch_all_tests(each_callback)
 
-def launch_tests(each_callback, targets=None, all=False):
-    if not bool(targets) ^ bool(all):
-        raise TypeError("Must pass *either* `all=True` or `targets=['target1', 'target2']")
-
-    if targets is None:
-        targets = []
-        for config in webstress.configuration.configs.values():
-            targets.extend(config["targets"])
+def launch_all_tests(each_callback):
+    targets = []
+    for config in webstress.configuration.configs.values():
+        targets.extend(config["targets"])
 
     http = webstress.client.http.HTTP(webstress.configuration.encoding)
     for target in targets:
         http.add_target(target)
 
     return http.hit(each_callback=each_callback)
+
+def launch_test(config, targets, each_callback=None):
+    http = webstress.client.http.HTTP(webstress.configuration.encoding)
+    for target in targets:
+        http.add_target(target)
+
+    return http.hit(each_callback=each_callback, tps=config["tps"])
 
 def update_config(configs):
     # Takes a list of dicts, each dict is one config

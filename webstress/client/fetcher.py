@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
 from datetime import datetime
+import random
 
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 from twisted.internet import defer
@@ -21,6 +22,8 @@ class Fetcher(object):
         for target in targets:
             for _ in xrange(target.hits):
                 self.targets.append(target)
+        # Order shouldn't matter ?
+        random.shuffle(self.targets)
 
     def get(self, target, method="GET", headers=None):
         if headers is None:
@@ -63,6 +66,18 @@ class Fetcher(object):
 
         return success, complete
 
-    def results(self):
-        d = defer.gatherResults(self.get(target) for target in self.targets)
+    def results(self, tps=None):
+        if tps is not None:
+            # Throttle transactions per second
+            delay = 1.0 / tps
+            deferreds = []
+            for i, target in enumerate(self.targets):
+                def get(target, i):
+                    def closure():
+                       return task.deferLater(reactor, delay * i, self.get, target)
+                    return closure()
+                deferreds.append(get(target, i))
+            d = defer.gatherResults(deferreds)
+        else:
+            d = defer.gatherResults(self.get(target) for target in self.targets)
         return d

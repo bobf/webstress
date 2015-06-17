@@ -4,8 +4,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
 (function () {
     WS.COMPLETE = 1;
-    WS.INCOMPLETE = 2;
+    WS.PENDING = 2;
     WS.WAITING = 3;
+    WS.INACTIVE = 4;
     WS.targets = {};
     WS.active_tests = {};
     WS._count = 0;
@@ -28,22 +29,24 @@ if (typeof window.WS === 'undefined') window.WS = {};
     Transport.Dispatch = Nevow.Athena.Widget.subclass('Transport.Dispatch');
 
     Transport.Dispatch.methods(
-        function result(self, args, kwargs) {
-            var target = WS.active_tests[kwargs._uid].target,
+        function result(self, _, kwargs) {
+            var uid = kwargs.uid,
+                result = kwargs.result,
+                config = WS.active_tests[uid].config,
+                target = WS.active_tests[uid][result.target.uid].target,
                 results = target.state.results.slice();
 
-            results.push(args[0]);
-            target.setState({results: results,
-                             average: WS.average_response_time(results),
-                             status: WS.INCOMPLETE
-                            });
+                results.push(result);
+                config.setState({state: WS.PENDING});
+                target.setState({results: results,
+                                 average: WS.average_response_time(results)
+                                });
         },
         function all_results(self, args, kwargs) {
-            var target = WS.active_tests[kwargs._uid].target;
-            target.setState({results: args[0],
-                             average: WS.average_response_time(args[0]),
-                             status: WS.COMPLETE
-                            });
+            var uid = kwargs.uid,
+                config = WS.active_tests[uid].config;
+
+                config.setState({state: WS.COMPLETE});
         },
         function configs(self, argument) {
             WS.config_grid.setState({data: argument});

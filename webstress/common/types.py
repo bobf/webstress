@@ -14,6 +14,7 @@ class Target(object):
         self.hits = target["hits"]
         self.name = target.get("name")
         self.base_url = target["base_url"]
+        self.uid = None
 
     @property
     def url(self):
@@ -29,7 +30,7 @@ class Target(object):
 
     def to_json(self):
         attribs = ["owner", "success", "status_code",
-                   "hits", "name", "base_url"]
+                   "hits", "name", "base_url", "uid"]
         obj = dict(
             (x, getattr(self, x))
             for x in attribs)
@@ -58,16 +59,18 @@ class Result(object):
         return template % dict((k, getattr(self, k, "Unknown")) for k in attribs)
 
     def __init__(self, target, **kwargs):
-        self._target = target
+        self.target = target
         self.success = kwargs["success"]
         self.duration = kwargs["duration"]
         self.url = kwargs["url"]
         self.status_code = kwargs["status_code"]
 
     def to_json(self):
-        return dict(
+        d = dict(
                 (x, getattr(self, x))
                 for x in ["success", "duration", "url", "status_code"])
+        d['target'] = self.target.to_json()
+        return d
 
 class Response(object):
     def __repr__(self):

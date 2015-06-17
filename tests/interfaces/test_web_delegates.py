@@ -30,8 +30,10 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
             {"method": "launch_test",
              "args": [],
              "kwargs": {
+                'uid': 9999,
+                'config_name': 'test_config',
                 'requested_targets': [
-                    {"config": 'test_config', "name": "test1"}
+                    {"name": "test1", "uid": 1234}
                     ]
                 }
             }
@@ -40,8 +42,10 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
         responses = yield gatherResults(self.transport.build_and_execute_responses(json))
 
         self.assertTrue(self.delegate.called)
+        self.assertTrue(all(x.result['uid'] == 9999 for x in responses))
         self.assertTrue(any(x.delegate is self.delegate for x in responses))
-        self.assertTrue(any(hasattr(x.result[0], "duration") for x in responses))
+        self.assertTrue(any("duration" in x.result['result'][0] for x in responses))
+        self.assertTrue(all(x.result['result'][0]['target']['uid'] == 1234 for x in responses))
 
     @inlineCallbacks
     def test_list_available_tests(self):
