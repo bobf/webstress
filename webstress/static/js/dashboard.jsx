@@ -67,7 +67,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       <input className="run-button"
                              type="button" value="Run Test"
                              onClick={this.run_test} />
-                      {{tps}}
+                      {tps}
                       <div><h2>Status:</h2> {state}</div>
                       {average}
                       {response_codes}
