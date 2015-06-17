@@ -4,6 +4,7 @@ $green: #4c8f39;
 $grey: #c2c2c2;
 $white: #fff;
 $black: #000;
+$red: #ed5365;
 
 body {
   font-family: Helvetica;
@@ -30,9 +31,38 @@ body {
         display: inline;
       }
 
-
       input.run-button {
         margin: 10px 5px;
+      }
+
+      table.results {
+        border-bottom: 1px solid $grey;
+        thead th {
+          font-weight: bold;
+          padding: 2px 5px;
+
+          &.code-4 {
+            background-color: $amber;
+          }
+
+          &.code-5 {
+            background-color: $red;
+            color: $white;
+          }
+
+          &.code-2 {
+            background-color: $green;
+            color: $white;
+          }
+
+          &.code-3 {
+            background-color: $green;
+          }
+        }
+        tbody td {
+          text-align: center;
+          padding: 2px 5px;
+        }
       }
 
       span.state {
@@ -61,14 +91,6 @@ body {
 
       div.target {
         border: 1px solid #999;
-
-        table.results {
-          thead th {
-            font-weight: bold;
-          }
-          tbody td {
-          }
-        }
       }
     }
   }

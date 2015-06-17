@@ -16,15 +16,20 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Config = React.createClass({
             getInitialState: function () {
-                return {state: WS.INACTIVE}
+                return {state: WS.INACTIVE, results: [], average: null};
             },
             render: function () {
                 var data = this.props.data,
                     targets = data.targets.map(function (target) {
                         return (<Target data={target} />);
                     }),
-                    state, tps;
+                    response_codes,
+                    state, tps, average;
                 WS.targets[data.name] = {};
+
+                response_codes = (
+                    <ResponseCodes data={this.state.results} />
+                );
 
                 switch (this.state.state) {
                     case WS.COMPLETE:
@@ -47,15 +52,26 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     tps = '';
                 }
 
+
+                if (this.state.average) {
+                    average = (
+                        <div><h2>Average Duration:</h2> {this.state.average}</div>
+                        );
+                } else {
+                    average = '';
+                }
+
                 return (
                     <div className="config grid-item">
                       <h1 className="config-name">{data.name}</h1>
+                      <input className="run-button"
+                             type="button" value="Run Test"
+                             onClick={this.run_test} />
                       {{tps}}
                       <div><h2>Status:</h2> {state}</div>
+                      {average}
+                      {response_codes}
                       <div>
-                        <input className="run-button"
-                               type="button" value="Run Test"
-                               onClick={this.run_test} />
                         <h2>Targets ({targets.length})</h2>
                         {targets}
                       </div>
@@ -156,7 +172,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 var data = this.props.data,
                     i, code, codes = {},
                     results = [], table = [],
-                    head = [], row = [];
+                    head = [], row = [], cls;
 
                 for (i = 0; i < data.length; i ++) {
                     if (!data[i].success && data[i].status_code == null) {
@@ -172,7 +188,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
                 results.sort();
                 for (i = 0; i < results.length; i ++) {
-                    head.push(<th>{results[i][0]}</th>);
+                    cls = "code-" + results[i][0].substr(0, 1);
+                    head.push(<th className={cls}>{results[i][0]}</th>);
                     row.push(<td>{results[i][1]}</td>);
                 }
 
@@ -183,7 +200,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     <div>
                         <h2>Response Codes</h2>
                         <table className="results">
-                            <thead>{head}</thead>
+                            <thead>
+                                <tr>{head}</tr>
+                            </thead>
                             <tbody>
                                 <tr>{row}</tr>
                             </tbody>
@@ -210,7 +229,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
     $content.do_layout = function () {
         $content.masonry({
             itemSelector: ".grid-item",
-            columnWidth: 10,
+            columnWidth: 50,
             gutter: 10
         });
     };

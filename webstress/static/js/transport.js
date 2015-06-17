@@ -35,12 +35,20 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 config = WS.active_tests[uid].config,
                 target = WS.active_tests[uid][result.target.uid].target,
                 results = target.state.results.slice();
+                // We can probably do this more efficiently than copying arrays
+                all_results = config.state.results.slice();
 
                 results.push(result);
-                config.setState({state: WS.PENDING});
-                target.setState({results: results,
-                                 average: WS.average_response_time(results)
-                                });
+                all_results.push(result);
+                config.setState({
+                    state: WS.PENDING,
+                    results: all_results,
+                    average: WS.average_response_time(all_results)
+                });
+                target.setState({
+                    results: results,
+                    average: WS.average_response_time(results)
+                });
         },
         function all_results(self, args, kwargs) {
             var uid = kwargs.uid,
