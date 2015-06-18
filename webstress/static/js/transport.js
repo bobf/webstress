@@ -12,11 +12,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
     WS._count = 0;
 
     WS.stats = {
-        average: function (array, attr) {
+        average: function (array) {
             var i, item, total, average;
+
+            if (!array.length) return NaN;
+
             total = 0;
             for (i = 0; i < array.length; i ++) {
-                item = attr ? array[i][attr] : array[i];
+                item = array[i];
                 total += item;
             }
             average = total / array.length;
@@ -24,42 +27,45 @@ if (typeof window.WS === 'undefined') window.WS = {};
             return average;
         },
 
-        median: function (array, attr) {
+        median: function (array) {
             var index;
-            if (array.length === 1) {
-                return attr ? array[0][attr] : array[0];
+            switch (array.length) {
+                case 0:
+                    return NaN;
+                case 1:
+                    return array[0];
             }
 
             array.sort(function (x, y) {
-                return (attr ? x[attr] : x) - (attr ? y[attr] : y);
+                return x - y;
             });
 
             index = array.length / 2;
             if (index % 1) {
                 index = Math.ceil(index);
-                return attr ? array[index][attr] : array[index];
+                return array[index];
             } else {
                 return WS.stats.average([
                     array[index - 1],
                     array[index]
-                ], attr);
+                ]);
             }
         },
 
-        peak: function (array, attr) {
-            var i, item, peak;
+        peak: function (array) {
+            var i, item, peak = NaN;
             for (i = 0; i < array.length; i ++) {
-                item = attr ? array[i][attr] : array[i];
+                item = array[i];
                 if (i === 0) peak = item;
                 if (item > peak) peak = item;
             }
             return peak;
         },
 
-        nadir: function (array, attr) {
-            var i, item, nadir;
+        nadir: function (array) {
+            var i, item, nadir = NaN;
             for (i = 0; i < array.length; i ++) {
-                item = attr ? array[i][attr] : array[i];
+                item = array[i];
                 if (i === 0) nadir = item;
                 if (item < nadir) nadir = item;
             }
@@ -72,13 +78,21 @@ if (typeof window.WS === 'undefined') window.WS = {};
     };
 
     WS.get_duration_stats = function (results) {
-        var attr = "duration";
-        return {
-                average: WS.stats.average(results, attr),
-                median: WS.stats.median(results, attr),
-                peak: WS.stats.peak(results, attr),
-                nadir: WS.stats.nadir(results, attr)
-        };
+        var relevant = _.filter(results, function (x) {
+                return x.success;
+            }),
+            durations = _.pluck(relevant, "duration");
+
+        if (!durations.length) {
+            return null;
+        } else {
+            return {
+                average: WS.stats.average(durations),
+                median: WS.stats.median(durations),
+                peak: WS.stats.peak(durations),
+                nadir: WS.stats.nadir(durations)
+            };
+        }
     };
 
     WS.get_uid = function () {

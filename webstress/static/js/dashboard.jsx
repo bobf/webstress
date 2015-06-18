@@ -263,6 +263,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
         DurationStats = React.createClass({
             render: function () {
                 var data = this.props.data;
+                if (_.isEmpty(data)) {
+                    return "";
+                }
                 return (
                     <table className="duration-stats">
                     <thead>
