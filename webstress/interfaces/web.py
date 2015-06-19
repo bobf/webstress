@@ -39,8 +39,6 @@ class Transport(athena.LiveElement):
         delegate._transport = self
 
     def send(self, method, *args, **kwargs):
-        log.msg("Athena send: %s, %s, %s" % (method, args, kwargs))
-
         self.callRemote(method, args, kwargs)
 
     @athena.expose
@@ -56,8 +54,6 @@ class Transport(athena.LiveElement):
         method = params["method"]
         args = params.get("args", [])
         kwargs = params.get("kwargs", {})
-
-        log.msg("Athena receive: %s, %s, %s" % (method, args, kwargs))
 
         responses = []
 
