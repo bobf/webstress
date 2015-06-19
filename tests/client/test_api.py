@@ -47,3 +47,14 @@ class TestAPI(twisted.trial.unittest.TestCase):
         self.assertTrue(
             (datetime.datetime.now() - start).total_seconds() >= 0.5
         )
+
+    @inlineCallbacks
+    def test_statistics(self):
+        results = yield webstress.client.api.run(
+            self.configs, each_callback=self.noop)
+
+        result = results[0]
+
+        # Not really sure what useful tests we can run on this. Let's just make
+        # sure they exist and have at least some amount of coherence
+        self.assertTrue(result.stats["200"]["nadir"] <= result.stats["200"]["peak"])

@@ -63,6 +63,11 @@ body {
 
       table.duration-stats {
         thead th {
+          &.blank {
+            background: none;
+            background-color: none;
+          }
+
           width: 30px;
           padding: 5px 8px;
           text-align: center;
@@ -86,6 +91,10 @@ body {
             color: $red;
           }
         }
+
+        &.histogram {
+          margin-top: 25px;
+        }
       }
 
       table.results {
@@ -93,24 +102,6 @@ body {
         thead th {
           font-weight: bold;
           padding: 5px 8px;
-
-          &.code-4 {
-            background-color: $amber;
-          }
-
-          &.code-5 {
-            background-color: $red;
-            color: $white;
-          }
-
-          &.code-2 {
-            background-color: $green;
-            color: $white;
-          }
-
-          &.code-3 {
-            background-color: $green;
-          }
         }
         tbody td {
           text-align: center;
@@ -203,5 +194,29 @@ body {
         }
       }
     }
+  }
+}
+
+td, th {
+  &.code-4 {
+    background-color: $amber;
+  }
+
+  &.code-5 {
+    background-color: $red;
+    color: $white;
+  }
+
+  &.code-2 {
+    background-color: $green;
+    color: $white;
+  }
+
+  &.code-3 {
+    background-color: $green;
+  }
+
+  &.failure {
+    background-color: $red;
   }
 }

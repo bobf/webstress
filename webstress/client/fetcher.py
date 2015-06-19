@@ -10,13 +10,15 @@ from twisted.web.http import HTTPClient
 from twisted.internet import defer
 
 from webstress.common.types import Result
+from webstress.util import stats
 
 class Client(HTTPClient):
-    def __init__(self, deferred, target, url, each_callback=None):
+    def __init__(self, deferred, target, url, stats_callback, each_callback=None):
         self._each_callback = each_callback
         self._deferred = deferred
         self._target = target
         self._url = url
+        self._stats_callback = stats_callback
 
     def dataReceived(self, data):
         # We don't care about the response body, we just want to consume it
@@ -25,11 +27,21 @@ class Client(HTTPClient):
     def connectionLost(self, reason):
         duration = (datetime.now() - self._target.start_time).total_seconds()
 
+        success = self._target.success and reason.type == ResponseDone
+
         result = Result(target=self._target,
                       success=self._target.success and reason.type == ResponseDone,
                       duration=duration,
                       url=self._url,
-                      status_code=self._target.status_code)
+                      # Let's not treat status codes as numeric values
+                      status_code=unicode(self._target.status_code))
+
+        if not success:
+            stat_category = 'Failure'
+        else:
+            stat_category = result.status_code
+
+        self._stats_callback(stat_category, result)
 
         if self._each_callback is not None:
             self._each_callback(result)
@@ -42,6 +54,7 @@ class Fetcher(object):
         self.each_callback = None
         self.targets = []
         self.encoding = encoding
+        self.timings = {}
 
     def add_targets(self, targets):
         for target in targets:
@@ -49,6 +62,21 @@ class Fetcher(object):
                 self.targets.append(target)
         # Order shouldn't matter ?
         random.shuffle(self.targets)
+
+    def update_stats(self, category, result):
+        self.timings.setdefault(category, []).append(result.duration)
+        result.stats = {}
+        for key in self.timings:
+            durations = self.timings[key]
+            result.stats[key] = {
+                "nadir": stats.nadir(durations),
+                "peak": stats.peak(durations),
+                "median": stats.median(durations),
+                "mean": stats.mean(durations),
+                "percentiles": stats.percentiles(durations),
+                "std_deviation": stats.std_deviation(durations),
+                "histogram": stats.histogram(durations)
+            }
 
     def get(self, target, method="GET", headers=None):
         if headers is None:
@@ -74,7 +102,8 @@ class Fetcher(object):
             target.status_code = response.code
 
             d = defer.Deferred()
-            client = Client(d, target, url, self.each_callback)
+            client = Client(d, target, url, self.update_stats,
+                            self.each_callback)
             response.deliverBody(client)
 
             return d

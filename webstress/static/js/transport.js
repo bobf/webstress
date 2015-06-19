@@ -11,87 +11,33 @@ if (typeof window.WS === 'undefined') window.WS = {};
     WS.active_tests = {};
     WS._count = 0;
 
-    WS.stats = {
-        average: function (array) {
-            var i, item, total, average;
-
-            if (!array.length) return NaN;
-
-            total = 0;
-            for (i = 0; i < array.length; i ++) {
-                item = array[i];
-                total += item;
-            }
-            average = total / array.length;
-
-            return average;
-        },
-
-        median: function (array) {
-            var index;
-            switch (array.length) {
-                case 0:
-                    return NaN;
-                case 1:
-                    return array[0];
-            }
-
-            array.sort(function (x, y) {
-                return x - y;
-            });
-
-            index = array.length / 2;
-            if (index % 1) {
-                index = Math.ceil(index);
-                return array[index];
-            } else {
-                return WS.stats.average([
-                    array[index - 1],
-                    array[index]
-                ]);
-            }
-        },
-
-        peak: function (array) {
-            var i, item, peak = NaN;
-            for (i = 0; i < array.length; i ++) {
-                item = array[i];
-                if (i === 0) peak = item;
-                if (item > peak) peak = item;
-            }
-            return peak;
-        },
-
-        nadir: function (array) {
-            var i, item, nadir = NaN;
-            for (i = 0; i < array.length; i ++) {
-                item = array[i];
-                if (i === 0) nadir = item;
-                if (item < nadir) nadir = item;
-            }
-            return nadir;
-        },
-
+    WS.util = {
         format: function (value, precision) {
-            return value.toFixed(precision);
-        }
-    };
+            return value.toFixed(precision) || '';
+        },
 
-    WS.get_duration_stats = function (results) {
-        var relevant = _.filter(results, function (x) {
-                return x.success;
-            }),
-            durations = _.pluck(relevant, "duration");
+        status_code_class: function (value) {
+            if (isNaN(parseInt(value))) {
+                switch (value) {
+                    case "Failure":
+                        return "failure";
+                }
+            }
+            return "code-" + value.substr(0, 1);
+        },
 
-        if (!durations.length) {
-            return null;
-        } else {
-            return {
-                average: WS.stats.average(durations),
-                median: WS.stats.median(durations),
-                peak: WS.stats.peak(durations),
-                nadir: WS.stats.nadir(durations)
-            };
+        severity: function (value) {
+            if (typeof value !== "number") {
+                return "";
+            }
+
+            if (value < 1) {
+                return "low";
+            } else if (value < 5) {
+                return "medium";
+            } else {
+                return "high";
+            }
         }
     };
 
@@ -116,11 +62,11 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 config.setState({
                     state: WS.PENDING,
                     results: all_results,
-                    duration_stats: WS.get_duration_stats(all_results)
+                    stats: result.stats
                 });
                 target.setState({
                     results: results,
-                    duration_stats: WS.get_duration_stats(results)
+                    stats: result.stats
                 });
         },
         function all_results(self, args, kwargs) {

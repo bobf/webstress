@@ -64,11 +64,12 @@ class Result(object):
         self.duration = kwargs["duration"]
         self.url = kwargs["url"]
         self.status_code = kwargs["status_code"]
+        self.stats = {}
 
     def to_json(self):
         d = dict(
                 (x, getattr(self, x))
-                for x in ["success", "duration", "url", "status_code"])
+                for x in ["success", "duration", "url", "status_code", "stats"])
         d['target'] = self.target.to_json()
         return d
 

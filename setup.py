@@ -22,5 +22,6 @@ setup(name='WebStress',
         'fake-factory==0.4.2',
         'nevow==0.11.1',
         'mock==1.0.1',
+        'numpy==1.9.2',
        ],
      )

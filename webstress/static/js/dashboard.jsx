@@ -16,7 +16,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Config = React.createClass({
             getInitialState: function () {
-                return {state: WS.INACTIVE, results: [], duration_stats: null};
+                return {state: WS.INACTIVE, results: [], stats: null};
             },
             render: function () {
                 var data = this.props.data,
@@ -52,9 +52,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     tps = '';
                 }
 
-                if (this.state.duration_stats) {
+                if (this.state.stats) {
                     duration_stats = (
-                        <DurationStats data={this.state.duration_stats} />
+                        <DurationStats data={this.state.stats} />
                         );
                 } else {
                     duration_stats = '';
@@ -134,7 +134,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Target = React.createClass({
             getInitialState: function () {
-                return {results: [], duration_stats: null};
+                return {results: [], stats: null};
             },
             render: function () {
                 var data = this.props.data,
@@ -150,9 +150,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 // Make this target accessible elsewhere
                 WS.targets[data.owner][data.name] = this;
 
-                if (this.state.duration_stats) {
+                if (this.state.stats) {
                     duration_stats = (
-                        <DurationStats data={this.state.duration_stats} />
+                        <DurationStats data={this.state.stats} />
                         );
                 } else {
                     duration_stats = '';
@@ -237,7 +237,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
                 results.sort();
                 for (i = 0; i < results.length; i ++) {
-                    cls = "code-" + results[i][0].substr(0, 1);
+                    cls = WS.util.status_code_class(results[i][0]);
                     head.push(<th className={cls}>{results[i][0]}</th>);
                     row.push(<td>{results[i][1]}</td>);
                 }
@@ -262,38 +262,91 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         DurationStats = React.createClass({
             render: function () {
-                var data = this.props.data;
+                var data = this.props.data,
+                    keys = _.keys(data),
+                    that = this,
+                    rows, histogram;
                 if (_.isEmpty(data)) {
                     return "";
                 }
+
+                keys.sort();
+                rows = _.map(keys, function (key) {
+                    var peak = data[key].peak,
+                        nadir = data[key].nadir,
+                        mean = data[key].mean,
+                        median = data[key].median,
+                        percentiles = data[key].percentiles,
+                        std_deviation = data[key].std_deviation
+                    return (
+                        <tr>
+                          <td className={WS.util.status_code_class(key)}>{key}</td>
+                          <td className={WS.util.severity(peak)}>{WS.util.format(peak, 2)}</td>
+                          <td className={WS.util.severity(nadir)}>{WS.util.format(nadir, 2)}</td>
+                          <td className={WS.util.severity(mean)}>{WS.util.format(mean, 2)}</td>
+                          <td className={WS.util.severity(median)}>{WS.util.format(median, 2)}</td>
+                        </tr>
+                    );
+                }, this);
+
+                if (data["200"]) {
+                    histogram = (
+                        <Histogram data={data["200"].histogram} />
+                    );
+                } else {
+                    histogram = '';
+                }
                 return (
+                    <div>
                     <table className="duration-stats">
                     <thead>
+                        <th className="blank"></th>
                         <th>Peak</th>
                         <th>Nadir</th>
-                        <th>Average</th>
+                        <th>Mean</th>
                         <th>Median</th>
                     </thead>
                     <tbody>
-                        <td className={this.get_class(data.peak)}>{WS.stats.format(data.peak, 2)}</td>
-                        <td className={this.get_class(data.nadir)}>{WS.stats.format(data.nadir, 2)}</td>
-                        <td className={this.get_class(data.average)}>{WS.stats.format(data.average, 2)}</td>
-                        <td className={this.get_class(data.median)}>{WS.stats.format(data.median, 2)}</td>
+                        {rows}
                     </tbody>
                     </table>
+                    {histogram}
+                    </div>
                 );
-            },
-            get_class: function (value) {
-                if (value < 1) {
-                    return "low";
-                } else if (value < 5) {
-                    return "medium";
-                } else {
-                    return "high";
-                }
+            }
+        }),
+        Histogram = React.createClass({
+            render: function () {
+                var data = this.props.data,
+                    head = _.map(_.rest(data.edges), function (edge) {
+                        return (
+                            <th>&lt;={WS.util.format(edge, 2)}s</th>
+                        );
+                    }, this),
+                    row = _.map(data.histogram, function (value) {
+                        return (
+                            <td>{WS.util.format(value, 2)}</td>
+                        );
+                    }, this);
+
+                return (
+                    <table className="duration-stats histogram">
+                      <thead>
+                        <tr>
+                          <th className="blank"></th>
+                          {head}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className={WS.util.status_code_class("200")}>Success</td>
+                          {row}
+                        </tr>
+                      </tbody>
+                    </table>
+                );
             }
         });
-
 
 
     $content = $('<div class="grid"></div>');
