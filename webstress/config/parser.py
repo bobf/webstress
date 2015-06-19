@@ -1,14 +1,14 @@
 from __future__ import unicode_literals
 
 import yaml
-from faker import Faker
+from faker import Factory
 
 from webstress.common.types import Target
 from webstress.common.exceptions import (NonUniqueConfigNames,
                                          NonUniqueTargetNames,
                                          TargetNotFound)
 
-fake = Faker()
+fake = Factory.create('en_GB')
 
 # http://stackoverflow.com/a/2967461
 from yaml import Loader, SafeLoader
