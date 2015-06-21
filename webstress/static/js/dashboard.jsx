@@ -318,9 +318,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
         Histogram = React.createClass({
             render: function () {
                 var data = this.props.data,
-                    head = _.map(_.rest(data.edges), function (edge) {
+                    head = _.map(_.rest(data.edges), function (right_edge, i) {
+                        var left_edge = data.edges[i];
                         return (
-                            <th>&lt;={WS.util.format(edge, 2)}s</th>
+                            <th className="divide-right">
+                              {WS.util.format(left_edge, 2)}
+                              <span className="arrows">&harr;</span>
+                              {WS.util.format(right_edge, 2)}
+                            </th>
                         );
                     }, this),
                     row = _.map(data.histogram, function (value) {
@@ -333,7 +338,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     <table className="duration-stats histogram">
                       <thead>
                         <tr>
-                          <th className="blank"></th>
+                          <th className="blank bold">Seconds</th>
                           {head}
                         </tr>
                       </thead>
@@ -363,7 +368,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
     $content.do_layout = function () {
         $content.masonry({
             itemSelector: ".grid-item",
-            columnWidth: 50,
+            columnWidth: 90,
             gutter: 10
         });
     };

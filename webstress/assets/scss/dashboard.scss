@@ -1,6 +1,7 @@
 $yellow: #fce353;
 $amber: #e8a633;
 $green: #4c8f39;
+$light-grey: #e2e1e1;
 $grey: #c2c2c2;
 $dark-grey: #a2a2a2;
 $white: #fff;
@@ -27,7 +28,7 @@ body {
     div.config {
       border-top: 1px dotted $grey;
       border-bottom: 1px dotted $grey;
-      width: 30%;
+      width: 40%;
       padding-bottom: 10px;
 
       h1.config-name {
@@ -68,6 +69,19 @@ body {
             background-color: none;
           }
 
+          &.bold {
+            font-weight: bold;
+          }
+
+          &.divide-right {
+            border-right: 1px solid $light-grey;
+          }
+
+          span.arrows {
+            font-weight: normal;
+            color: $light-grey;
+          }
+
           width: 30px;
           padding: 5px 8px;
           text-align: center;
@@ -97,6 +111,11 @@ body {
         }
       }
 
+      table.histogram {
+        thead th {
+          font-weight: normal;
+        }
+      }
       table.results {
         margin: 8px 0;
         thead th {
