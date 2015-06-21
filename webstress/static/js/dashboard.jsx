@@ -325,7 +325,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     }, this),
                     row = _.map(data.histogram, function (value) {
                         return (
-                            <td>{WS.util.format(value, 2)}</td>
+                            <td>{value}</td>
                         );
                     }, this);
 
