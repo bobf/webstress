@@ -44,7 +44,6 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
         self.assertTrue(self.delegate.called)
         self.assertTrue(response.result['uid'] == 9999)
         self.assertTrue(response.delegate is self.delegate)
-        self.assertTrue('stats' in response.result['results'][0])
 
     @inlineCallbacks
     def test_list_available_tests(self):

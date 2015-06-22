@@ -43,7 +43,6 @@ class StressTestDelegate(Delegate):
         for request in requested_targets:
             target = webstress.configuration.target_by_name(
                 config_name, request["name"])
-            target.uid = request["uid"]
             targets.append(target)
 
         return self.make_test_deferred(targets, uid)
@@ -62,11 +61,11 @@ class StressTestDelegate(Delegate):
     def make_test_deferred(self, targets, uid):
         def batch_callback(results, stats):
             response = {u"stats": stats, u"uid": uid}
-            self._transport.send("results", **response)
+            self._transport.send_to_all("results", **response)
             return response
         def all_callback(results):
             self._transport.send("all_results", **{u"uid": uid})
-            return response
+            return {u"uid": uid}
 
         config = webstress.configuration.configs[targets[0].owner]
 

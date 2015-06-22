@@ -90,19 +90,15 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 );
             },
             componentDidMount: function () {
+                this.reset();
                 $content.do_layout();
             },
             componentDidUpdate: function (props, state) {
                 $content.do_layout();
-                if (state.stats && state.stats["200"]) {
-                    this._points = state.stats["200"].chart_points.slice();
-                } else {
-                    this._points = [];
-                }
             },
             reset: function () {
                 this.setState(this.getInitialState());
-                this._points = [];
+                WS.active_tests[this.props.data.uid] = {config: this};
 
                 WS.init_chart(this.refs.chart.getDOMNode(), this.get_points);
             },
@@ -113,34 +109,34 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $(this.refs.targets_link.getDOMNode()).toggleClass("active");
             },
             get_points: function () {
-                return this._points;
+                if (this.state.stats && this.state.stats["200"]) {
+                    return this.state.stats["200"].chart_points.slice();
+                } else {
+                    return [];
+                }
             },
             run_test: function () {
                 var data = this.props.data,
-                    config_uid = WS.get_uid(),
                     target_uid,
                     key, targets = [],
                     that;
 
                 this.reset();
 
-                WS.active_tests[config_uid] = {config: this};
-
                 for (key in WS.targets[data.name]) {
                     if (!WS.targets[data.name].hasOwnProperty(key)) continue;
-                    target_uid = WS.get_uid();
                     target = WS.targets[data.name][key];
                     targets.push({
                         "name": target.props.data.name,
-                        "uid": target_uid
+                        "uid": target.props.data.uid
                     });
                     target.reset();
-                    WS.active_tests[config_uid][target_uid] = {target: target};
+                    WS.active_tests[data.uid][target.props.uid] = {target: target};
                     this.setState({state: WS.WAITING});
                 }
 
                 WS.call_remote("launch_test",
-                    {kwargs: {uid: config_uid,
+                    {kwargs: {uid: data.uid,
                               config_name: data.name,
                               requested_targets: targets}
                 });

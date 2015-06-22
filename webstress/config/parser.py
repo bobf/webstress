@@ -7,6 +7,7 @@ from webstress.common.types import Target
 from webstress.common.exceptions import (NonUniqueConfigNames,
                                          NonUniqueTargetNames,
                                          TargetNotFound)
+from webstress.util.helpers import hash_dict
 
 fake = Factory.create('en_GB')
 
@@ -84,6 +85,8 @@ class Config(object):
             for config in [self.configs[x] for x in self.configs]:
                 config = dict(config)
                 config["targets"] = [x.to_json() for x in config["targets"]]
+                config.pop("uid", None)
+                config["uid"] = hash_dict(config)
                 configs.append(config)
         else:
             configs = [self.configs[x] for x in self.configs]

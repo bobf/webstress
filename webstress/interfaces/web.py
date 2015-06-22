@@ -29,10 +29,12 @@ class TransportMaker(athena.LiveElement):
 class Transport(athena.LiveElement):
     jsClass = u'Transport.Dispatch'
     docFactory = loaders.xmlfile('webstress/templates/transport.xml')
+    _all_transports =[]
 
     def __init__(self, *args, **kwargs):
         super(Transport, self).__init__(*args, **kwargs)
         self._delegates = []
+        self._all_transports.append(self)
 
     def register_delegate(self, delegate):
         self._delegates.append(delegate)
@@ -40,6 +42,18 @@ class Transport(athena.LiveElement):
 
     def send(self, method, *args, **kwargs):
         self.callRemote(method, args, kwargs)
+
+    def send_to_all(self, method, *args, **kwargs):
+        to_remove = []
+        for transport in self._all_transports:
+            if transport.page is not None:
+                transport.callRemote(method, args, kwargs)
+            else:
+                to_remove.append(transport)
+
+        for transport in to_remove:
+            # Remove stale transports
+            self._all_transports.remove(transport)
 
     @athena.expose
     def receive(self, argument):

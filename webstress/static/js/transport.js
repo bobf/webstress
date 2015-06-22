@@ -42,11 +42,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
         calculate_stops: function (points) {
             var stops = [],
-                peak = _.max(points);
-            if (typeof points[0] === 'object') {
-                // I'm so confused
-                return null;
-            }
+                peak = _.max(_.map(points, function (x) { return x[1]; }));
             stops.push.apply(stops, [
                 peak >= 5 ? [1 - (5 / peak), '#ed5365'] : null,
                 peak >= 1 ? [1 - (1 / peak), '#e8a633'] : null,
@@ -75,7 +71,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                             var points = points_getter(),
                                 stops = WS.util.calculate_stops(points);
 
-                            if (!stops) {
+                            if (!points.length) {
                                 clearInterval(that.interval);
                                 return;
                             }
@@ -135,6 +131,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
         function results(self, _arguments, kwargs) {
             var uid = kwargs.uid,
                 stats = kwargs.stats,
+                config;
+
+                if (!WS.active_tests[uid]) {
+                    // Pragmatism
+                    return;
+                }
                 config = WS.active_tests[uid].config;
 
                 config.setState({

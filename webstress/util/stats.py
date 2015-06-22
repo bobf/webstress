@@ -26,7 +26,7 @@ def chart_points(L, num_points=100):
     points = []
     chunks = []
     if len(L) <= num_points:
-        return L
+        return list(enumerate(L))
 
     chunk_size = len(L) / num_points
 

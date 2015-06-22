@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from webstress.util.helpers import hash_dict
+
 import urlparse
 import urllib
 
@@ -14,7 +16,7 @@ class Target(object):
         self.hits = target["hits"]
         self.name = target.get("name")
         self.base_url = target["base_url"]
-        self.uid = None
+        self.uid = hash_dict(self._to_dict())
 
     @property
     def url(self):
@@ -28,9 +30,9 @@ class Target(object):
         else:
             return url
 
-    def to_json(self):
-        attribs = ["owner", "success", "status_code",
-                   "hits", "name", "base_url", "uid"]
+    def _to_dict(self):
+        attribs = ["owner",
+                   "hits", "name", "base_url"]
         obj = dict(
             (x, getattr(self, x))
             for x in attribs)
@@ -38,6 +40,11 @@ class Target(object):
         obj["params"] = [x.to_json() for x in self.params]
 
         return obj
+
+    def to_json(self):
+        d = self._to_dict()
+        d["uid"] = self.uid
+        return d
 
 class Param(object):
     def __init__(self, param):
@@ -49,7 +56,12 @@ class Param(object):
         return self._param["value_func"]()
 
     def to_json(self):
-        return {"key": self.key, "value": self.value}
+        if isinstance(self._param["value"], dict):
+            if "fake" in self._param["value"]:
+                return {"key": self.key,
+                        "value": "Fake: " + self._param["value"]["fake"]}
+        else:
+            return {"key": self.key, "value": self.value}
 
 
 class Result(object):
