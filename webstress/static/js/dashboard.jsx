@@ -77,10 +77,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         {response_codes}
                         {duration_stats}
                       </div>
+                      <div ref="chart"></div>
                       <a href="#" ref="targets_link" onClick={this.toggle_targets} className="targets">
                          <span ref="collapse" className="icon hidden">[-]</span>
                          <span ref="expand" className="icon">[+]</span>
                          <span className="wording">Targets ({targets.length})</span></a>
+
                       <div ref="targets" className="targets">
                         {targets}
                       </div>
@@ -90,11 +92,19 @@ if (typeof window.WS === 'undefined') window.WS = {};
             componentDidMount: function () {
                 $content.do_layout();
             },
-            componentDidUpdate: function () {
+            componentDidUpdate: function (props, state) {
                 $content.do_layout();
+                if (state.stats && state.stats["200"]) {
+                    this._points = state.stats["200"].chart_points;
+                } else {
+                    this._points = [];
+                }
             },
             reset: function () {
                 this.setState(this.getInitialState());
+                this._points = [];
+
+                WS.init_chart(this.refs.chart.getDOMNode(), this.get_points);
             },
             toggle_targets: function () {
                 $(this.refs.collapse.getDOMNode()).toggleClass("hidden");
@@ -102,11 +112,15 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $(this.refs.targets.getDOMNode()).toggle("fast");
                 $(this.refs.targets_link.getDOMNode()).toggleClass("active");
             },
+            get_points: function () {
+                return this._points;
+            },
             run_test: function () {
                 var data = this.props.data,
                     config_uid = WS.get_uid(),
                     target_uid,
-                    key, targets = [];
+                    key, targets = [],
+                    that;
 
                 this.reset();
 

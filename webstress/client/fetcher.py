@@ -39,7 +39,7 @@ class Client(HTTPClient):
         if not success:
             stat_category = 'Failure'
         else:
-            stat_category = result.status_code
+            stat_category = unicode(result.status_code)
 
         self._stats_callback(stat_category, result)
 
@@ -75,7 +75,8 @@ class Fetcher(object):
                 "mean": stats.mean(durations),
                 "percentiles": stats.percentiles(durations),
                 "std_deviation": stats.std_deviation(durations),
-                "histogram": stats.histogram(durations)
+                "histogram": stats.histogram(durations),
+                "chart_points": stats.chart_points(durations),
             }
 
     def get(self, target, method="GET", headers=None):

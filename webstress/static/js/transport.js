@@ -45,10 +45,68 @@ if (typeof window.WS === 'undefined') window.WS = {};
         return "" + ++WS._count;
     };
 
+    WS.init_chart = function (chart_node, points_getter) {
+        $(chart_node).highcharts({
+            chart: {
+                animation: false,
+                events: {
+                    load: function () {
+                        var series = this.series[0],
+                            chart = this;
+
+                        setInterval(function () {
+                            var points = points_getter();
+                            series.setData(points);
+                        }, 3000);
+                    }
+                }
+            },
+            title: {
+                text: 'Peak response times'
+            },
+            yAxis: {
+                title: {
+                    text: 'Response time'
+                }
+            },
+            xAxis: {
+                title: {
+                    text: 'Number of requests'
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                area: {
+                    marker: {
+                        enabled: false
+                    },
+                    fillColor: {
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
+                        stops: [
+                            [0, '#ed5365'],
+                            [0.8, '#99ff99'],
+                            [1, Highcharts.Color('#99ff99').setOpacity(0).get('rgba')]
+                        ]
+                    }
+                }
+            },
+            series: [{
+                type: 'area',
+                name: 'Response time',
+                data: [{marker: {enabled: false}}]
+            }],
+            credits: {
+                enabled: false
+            }
+        });
+    };
+
     Transport.Dispatch = Nevow.Athena.Widget.subclass('Transport.Dispatch');
 
     Transport.Dispatch.methods(
-        function result(self, _, kwargs) {
+        function result(self, _arguments, kwargs) {
             var uid = kwargs.uid,
                 result = kwargs.result,
                 config = WS.active_tests[uid].config,
@@ -59,6 +117,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
                 results.push(result);
                 all_results.push(result);
+
                 config.setState({
                     state: WS.PENDING,
                     results: all_results,
