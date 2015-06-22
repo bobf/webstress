@@ -38,6 +38,22 @@ if (typeof window.WS === 'undefined') window.WS = {};
             } else {
                 return "high";
             }
+        },
+
+        calculate_stops: function (points) {
+            var stops = [],
+                peak = _.max(points);
+            if (typeof points[0] === 'object') {
+                // I'm so confused
+                return null;
+            }
+            stops.push.apply(stops, [
+                peak >= 5 ? [1 - (5 / peak), '#ed5365'] : null,
+                peak >= 1 ? [1 - (1 / peak), '#e8a633'] : null,
+                [1, '#4c8f39']
+            ]);
+
+            return _.compact(stops);
         }
     };
 
@@ -52,11 +68,27 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 events: {
                     load: function () {
                         var series = this.series[0],
-                            chart = this;
+                            chart = this,
+                            that = this;
 
-                        setInterval(function () {
-                            var points = points_getter();
+                        that.interval = setInterval(function () {
+                            var points = points_getter(),
+                                stops = WS.util.calculate_stops(points);
+
+                            if (!stops) {
+                                clearInterval(that.interval);
+                                return;
+                            }
+
+                            series.update({
+                                fillColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
+                                    stops: stops
+                                }
+                            });
+
                             series.setData(points);
+
                         }, 3000);
                     }
                 }
@@ -79,16 +111,10 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             plotOptions: {
                 area: {
+                    lineColor: '#c2c2c2',
+                    lineWidth: 1,
                     marker: {
                         enabled: false
-                    },
-                    fillColor: {
-                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
-                        stops: [
-                            [0, '#ed5365'],
-                            [0.8, '#99ff99'],
-                            [1, Highcharts.Color('#99ff99').setOpacity(0).get('rgba')]
-                        ]
                     }
                 }
             },
@@ -106,26 +132,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
     Transport.Dispatch = Nevow.Athena.Widget.subclass('Transport.Dispatch');
 
     Transport.Dispatch.methods(
-        function result(self, _arguments, kwargs) {
+        function results(self, _arguments, kwargs) {
             var uid = kwargs.uid,
-                result = kwargs.result,
-                config = WS.active_tests[uid].config,
-                target = WS.active_tests[uid][result.target.uid].target,
-                results = target.state.results.slice();
-                // We can probably do this more efficiently than copying arrays
-                all_results = config.state.results.slice();
-
-                results.push(result);
-                all_results.push(result);
+                stats = kwargs.stats,
+                config = WS.active_tests[uid].config;
 
                 config.setState({
                     state: WS.PENDING,
-                    results: all_results,
-                    stats: result.stats
-                });
-                target.setState({
-                    results: results,
-                    stats: result.stats
+                    stats: stats
                 });
         },
         function all_results(self, args, kwargs) {

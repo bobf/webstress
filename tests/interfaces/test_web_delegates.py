@@ -39,13 +39,12 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
             }
         )
 
-        responses = yield gatherResults(self.transport.build_and_execute_responses(json))
+        response = (yield gatherResults(self.transport.build_and_execute_responses(json)))[0]
 
         self.assertTrue(self.delegate.called)
-        self.assertTrue(all(x.result['uid'] == 9999 for x in responses))
-        self.assertTrue(any(x.delegate is self.delegate for x in responses))
-        self.assertTrue(any("duration" in x.result['result'][0] for x in responses))
-        self.assertTrue(all(x.result['result'][0]['target']['uid'] == 1234 for x in responses))
+        self.assertTrue(response.result['uid'] == 9999)
+        self.assertTrue(response.delegate is self.delegate)
+        self.assertTrue('stats' in response.result['results'][0])
 
     @inlineCallbacks
     def test_list_available_tests(self):

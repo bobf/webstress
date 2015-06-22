@@ -4,8 +4,8 @@ import twisted.internet.task
 
 import webstress.client.api
 
-def each_callback(_result):
-    sys.stdout.write(".")
+def batch_callback(results):
+    sys.stdout.write("." * len(results))
     sys.stdout.flush()
 
 def display_results(results):
@@ -19,6 +19,6 @@ def run():
     twisted.internet.task.react(
         lambda _: webstress.client.api.run(
                     f.read(),
-                    each_callback=each_callback
+                    batch_callback=batch_callback
             ).addCallback(display_results)
         )

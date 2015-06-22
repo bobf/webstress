@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 import random
+import collections
 
 from twisted.internet import reactor, task
 from twisted.web.client import Agent, ResponseDone
@@ -36,7 +37,7 @@ class Client(HTTPClient):
                       # Let's not treat status codes as numeric values
                       status_code=unicode(self._target.status_code))
 
-        if not success:
+        if reason.type != ResponseDone:
             stat_category = 'Failure'
         else:
             stat_category = unicode(result.status_code)
@@ -51,10 +52,12 @@ class Client(HTTPClient):
 class Fetcher(object):
     def __init__(self, encoding):
         self.agent = Agent(reactor)
-        self.each_callback = None
+        self.batch_callback = None
         self.targets = []
         self.encoding = encoding
         self.timings = {}
+        self._deque = collections.deque()
+        self._batcher = None
 
     def add_targets(self, targets):
         for target in targets:
@@ -77,6 +80,7 @@ class Fetcher(object):
                 "std_deviation": stats.std_deviation(durations),
                 "histogram": stats.histogram(durations),
                 "chart_points": stats.chart_points(durations),
+                "count": len(durations),
             }
 
     def get(self, target, method="GET", headers=None):
@@ -123,6 +127,26 @@ class Fetcher(object):
 
         return callback, errback
 
+    def each_callback(self, result):
+        self._deque.appendleft(result)
+
+    def batch_results(self):
+        results = list(self._deque)
+
+        if results:
+            try:
+                if self.batch_callback is not None:
+                    return self.batch_callback(results, results[0].stats)
+            finally:
+                self._deque.clear()
+
+    def cancel_batcher(self, results):
+        # Make sure we at least send one batch before we stop
+        self.batch_results()
+        if self._batcher is not None:
+            self._batcher.stop()
+        return results
+
     def results(self, tps=None):
         if tps is not None:
             # Throttle transactions per second
@@ -137,4 +161,10 @@ class Fetcher(object):
             d = defer.gatherResults(deferreds)
         else:
             d = defer.gatherResults(self.get(target) for target in self.targets)
+
+        self._batcher = task.LoopingCall(self.batch_results)
+        self._batcher_d = self._batcher.start(1)
+
+        d.addBoth(self.cancel_batcher)
+
         return d

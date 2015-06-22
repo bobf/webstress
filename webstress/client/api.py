@@ -4,12 +4,12 @@ import webstress.client.http
 def reload_config():
     raise NotImplementedError("Must be set by whichever interface is used")
 
-def run(configs, each_callback=None):
+def run(configs, batch_callback=None):
     update_config(configs)
 
-    return launch_all_tests(each_callback)
+    return launch_all_tests(batch_callback)
 
-def launch_all_tests(each_callback):
+def launch_all_tests(batch_callback):
     targets = []
     for config in webstress.configuration.configs.values():
         targets.extend(config["targets"])
@@ -18,14 +18,14 @@ def launch_all_tests(each_callback):
     for target in targets:
         http.add_target(target)
 
-    return http.hit(each_callback=each_callback)
+    return http.hit(batch_callback=batch_callback)
 
-def launch_test(config, targets, each_callback=None):
+def launch_test(config, targets, batch_callback=None):
     http = webstress.client.http.HTTP(webstress.configuration.encoding)
     for target in targets:
         http.add_target(target)
 
-    return http.hit(each_callback=each_callback, tps=config["tps"])
+    return http.hit(batch_callback=batch_callback, tps=config["tps"])
 
 def update_config(configs):
     # Takes a list of dicts, each dict is one config

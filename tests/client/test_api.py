@@ -14,23 +14,30 @@ class TestAPI(twisted.trial.unittest.TestCase):
         self.configs = [{"name": "test", "body": std_sample_config}]
 
     @inlineCallbacks
-    def test_yields_results_to_callback(self):
+    def test_batching_callbacks(self):
         fired, fired['fired'] = {}, False
-        def each_callback(result):
+        def batch_callback(results, stats):
             fired['fired'] = True
+            self.assertTrue(isinstance(results, list))
 
         results = yield webstress.client.api.run(
-            self.configs, each_callback=each_callback)
+            self.configs, batch_callback=batch_callback)
 
         self.assertTrue(fired['fired'])
 
     @inlineCallbacks
     def test_results_have_actual_url(self):
         results = yield webstress.client.api.run(
-            self.configs, each_callback=self.noop)
+            self.configs, batch_callback=self.noop)
 
         # Confirm fake-generated data is stored against individual result
-        self.assertTrue(results[0].url != results[1].url)
+        # We have to hope that we don't get four of the exact same
+        # random-generated value :)
+        self.assertTrue(results[0].url != results[1].url or
+                        results[1].url != results[2].url or
+                        results[2].url != results[3].url
+                        )
+        # Make sure .url isn't re-generated each time
         self.assertTrue(results[0].url == results[0].url)
 
     @inlineCallbacks
@@ -51,7 +58,7 @@ class TestAPI(twisted.trial.unittest.TestCase):
     @inlineCallbacks
     def test_statistics(self):
         results = yield webstress.client.api.run(
-            self.configs, each_callback=self.noop)
+            self.configs, batch_callback=self.noop)
 
         result = results[0]
 

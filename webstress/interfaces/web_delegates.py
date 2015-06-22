@@ -60,18 +60,20 @@ class StressTestDelegate(Delegate):
         self._transport.send("configs", *configs)
 
     def make_test_deferred(self, targets, uid):
-        def each_callback(result):
-            response = {u"result": result.to_json(), u"uid": uid}
-            self._transport.send("result", **response)
+        def batch_callback(results, stats):
+            response = {u"stats": stats, u"uid": uid}
+            self._transport.send("results", **response)
             return response
         def all_callback(results):
-            response = {u"result": [x.to_json() for x in results], u"uid": uid}
-            self._transport.send("all_results", **response)
+            self._transport.send("all_results", **{u"uid": uid})
             return response
 
         config = webstress.configuration.configs[targets[0].owner]
 
-        d = webstress.client.api.launch_test(config, targets, each_callback=each_callback)
+        d = webstress.client.api.launch_test(
+            config, targets,
+            batch_callback=batch_callback)
+
         d.addCallback(all_callback)
 
         return d

@@ -16,7 +16,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Config = React.createClass({
             getInitialState: function () {
-                return {state: WS.INACTIVE, results: [], stats: null};
+                return {state: WS.INACTIVE, stats: null};
             },
             render: function () {
                 var data = this.props.data,
@@ -28,7 +28,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 WS.targets[data.name] = {};
 
                 response_codes = (
-                    <ResponseCodes data={this.state.results} />
+                    <ResponseCodes data={this.state.stats} />
                 );
 
                 switch (this.state.state) {
@@ -95,7 +95,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
             componentDidUpdate: function (props, state) {
                 $content.do_layout();
                 if (state.stats && state.stats["200"]) {
-                    this._points = state.stats["200"].chart_points;
+                    this._points = state.stats["200"].chart_points.slice();
                 } else {
                     this._points = [];
                 }
@@ -148,7 +148,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Target = React.createClass({
             getInitialState: function () {
-                return {results: [], stats: null};
+                return {stats: null};
             },
             render: function () {
                 var data = this.props.data,
@@ -156,7 +156,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <Params data={this.props.data.params} />
                     ),
                     response_codes = (
-                            <ResponseCodes data={this.state.results} />
+                            <ResponseCodes data={this.state.stats} />
                     ),
                     that = this,
                     duration_stats;
@@ -232,22 +232,21 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         ResponseCodes = React.createClass({
             render: function () {
-                var data = this.props.data,
-                    i, code, codes = {},
+                var i, code, codes = {},
                     results = [], table = [],
-                    head = [], row = [], cls;
+                    head = [], row = [],
+                    empty = (<div></div>),
+                    cls, data;
 
-                for (i = 0; i < data.length; i ++) {
-                    if (!data[i].success && data[i].status_code == null) {
-                        code = 'Failed';
-                    } else {
-                        code = data[i].status_code;
-                    }
-                    codes[code] = (codes[code] || 0) + 1;
+                if (!this.props.data) {
+                    return empty;
                 }
-                for (code in codes) {
-                    if (!codes.hasOwnProperty(code)) continue;
-                    results.push([code, codes[code]]);
+
+                data = this.props.data;
+
+                for (code in data) {
+                    if (!data.hasOwnProperty(code)) continue;
+                    results.push([code, data[code].count]);
                 }
                 results.sort();
                 for (i = 0; i < results.length; i ++) {
@@ -257,7 +256,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
 
                 if (!results.length) {
-                    return (<div></div>);
+                    return empty;
                 } else {
                     return (
                     <div>
