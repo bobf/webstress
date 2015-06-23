@@ -60,14 +60,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
     WS.init_chart = function (chart_node, points_getter) {
         $(chart_node).highcharts({
             chart: {
-                animation: false,
+                animation: true,
                 events: {
                     load: function () {
                         var series = this.series[0],
                             chart = this,
-                            that = this;
-
-                        that.interval = setInterval((function (owner) {
+                            that = this,
+                            update;
+                        update = (function (owner) {
                             return function () {
                                 var points = points_getter(),
                                     stops = WS.util.calculate_stops(points);
@@ -87,7 +87,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
                                 series.setData(points.slice());
                             }
-                        })(that), 3000);
+                        })(that)
+
+                        that.interval = setInterval(update, 3000);
+                        // Fire a single update quickly after starting to give
+                        // quicker feedback
+                        setTimeout(update, 500);
                     }
                 }
             },
