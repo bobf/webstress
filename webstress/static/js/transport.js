@@ -106,7 +106,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 enabled: false
             },
             plotOptions: {
-                area: {
+                areaspline: {
                     lineColor: '#c2c2c2',
                     lineWidth: 1,
                     marker: {
@@ -115,7 +115,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
             },
             series: [{
-                type: 'area',
+                type: 'areaspline',
                 name: 'Response time',
                 data: [{marker: {enabled: false}}]
             }],
