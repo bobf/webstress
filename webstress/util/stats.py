@@ -77,7 +77,10 @@ def chart_points(time_spans, durations, num_points=100):
     points = [ [start_time, peak(durations)]
                for start_time, durations in chunks ]
 
-    return {'type': 'datetime', 'title': 'Time', 'values': points}
+    tps = [ [start_time, len(durations)]
+            for start_time, durations in chunks ]
+
+    return {'type': 'datetime', 'title': 'Time', 'values': points, 'tps': tps}
 
 def chart_points_linear(L, num_points=100):
     """

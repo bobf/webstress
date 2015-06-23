@@ -95,7 +95,30 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                     x_axis.update({type: points.type,
                                                    title: points.title}, true);
                                 }
-                                series.setData(points.values.slice());
+
+                                if (points.tps && owner.series.length === 1) {
+                                    owner.addAxis({
+                                        title: {
+                                            text: 'TPS'
+                                        },
+                                        opposite: true
+                                    }, false);
+
+                                    owner.addSeries({
+                                        labels: {
+                                            style: {
+                                                color: "#ffff22"
+                                            }
+                                        },
+                                        type: 'spline',
+                                        name: 'TPS',
+                                        yAxis: 1
+                                    });
+                                }
+                                if (points.tps) {
+                                    owner.series[1].setData(points.tps.slice(), true);
+                                }
+                                owner.series[0].setData(points.values.slice());
                             }
                         })(that)
 
