@@ -67,25 +67,27 @@ if (typeof window.WS === 'undefined') window.WS = {};
                             chart = this,
                             that = this;
 
-                        that.interval = setInterval(function () {
-                            var points = points_getter(),
-                                stops = WS.util.calculate_stops(points);
+                        that.interval = setInterval((function (owner) {
+                            return function () {
+                                var points = points_getter(),
+                                    stops = WS.util.calculate_stops(points);
 
-                            if (!points.length) {
-                                clearInterval(that.interval);
-                                return;
-                            }
-
-                            series.update({
-                                fillColor: {
-                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
-                                    stops: stops
+                                if (!owner.series) {
+                                    // The chart got re-initialised
+                                    clearInterval(that.interval);
+                                    return;
                                 }
-                            });
 
-                            series.setData(points);
+                                series.update({
+                                    fillColor: {
+                                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
+                                        stops: stops
+                                    }
+                                });
 
-                        }, 3000);
+                                series.setData(points.slice());
+                            }
+                        })(that), 3000);
                     }
                 }
             },

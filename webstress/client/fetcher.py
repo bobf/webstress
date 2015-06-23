@@ -67,21 +67,34 @@ class Fetcher(object):
         random.shuffle(self.targets)
 
     def update_stats(self, category, result):
-        self.timings.setdefault(category, []).append(result.duration)
+    """
+    Calculate statistics for each individual target and each individual
+    category, i.e. 200 OK, Failure
+    """
+        self.timings.setdefault(result.target.name, {}
+            ).setdefault(category, []
+            ).append(result.duration)
+
+        self.timings.setdefault('__all__', {}
+            ).setdefault(category, []
+            ).append(result.duration)
+
         result.stats = {}
-        for key in self.timings:
-            durations = self.timings[key]
-            result.stats[key] = {
-                "nadir": stats.nadir(durations),
-                "peak": stats.peak(durations),
-                "median": stats.median(durations),
-                "mean": stats.mean(durations),
-                "percentiles": stats.percentiles(durations),
-                "std_deviation": stats.std_deviation(durations),
-                "histogram": stats.histogram(durations),
-                "chart_points": stats.chart_points(durations),
-                "count": len(durations),
-            }
+        for target in self.timings:
+            result.stats.setdefault(target, {})
+            for key in self.timings[target]:
+                durations = self.timings[target][key]
+                result.stats[target][key] = {
+                    "nadir": stats.nadir(durations),
+                    "peak": stats.peak(durations),
+                    "median": stats.median(durations),
+                    "mean": stats.mean(durations),
+                    "percentiles": stats.percentiles(durations),
+                    "std_deviation": stats.std_deviation(durations),
+                    "histogram": stats.histogram(durations),
+                    "chart_points": stats.chart_points(durations),
+                    "count": len(durations),
+                }
 
     def get(self, target, method="GET", headers=None):
         if headers is None:

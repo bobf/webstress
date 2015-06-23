@@ -16,7 +16,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Config = React.createClass({
             getInitialState: function () {
-                return {state: WS.INACTIVE, stats: null};
+                return {state: WS.INACTIVE, stats: {__all__: null}};
             },
             render: function () {
                 var data = this.props.data,
@@ -28,7 +28,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 WS.targets[data.name] = {};
 
                 response_codes = (
-                    <ResponseCodes data={this.state.stats} />
+                    <ResponseCodes data={this.state.stats.__all__} />
                 );
 
                 switch (this.state.state) {
@@ -52,9 +52,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     tps = '';
                 }
 
-                if (this.state.stats) {
+                if (this.state.stats.__all__) {
                     duration_stats = (
-                        <DurationStats data={this.state.stats} />
+                        <DurationStats data={this.state.stats.__all__} />
                         );
                 } else {
                     duration_stats = '';
@@ -94,6 +94,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $content.do_layout();
             },
             componentDidUpdate: function (props, state) {
+                var name = this.props.data.name,
+                    targets = WS.targets[name],
+                    key;
+                for (key in targets) {
+                    if (!targets.hasOwnProperty(key)) continue;
+
+                    targets[key].setState({stats: this.state.stats[key]});
+                }
                 $content.do_layout();
             },
             reset: function () {
@@ -109,15 +117,15 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $(this.refs.targets_link.getDOMNode()).toggleClass("active");
             },
             get_points: function () {
-                if (this.state.stats && this.state.stats["200"]) {
-                    return this.state.stats["200"].chart_points.slice();
+                if (this.state.stats && this.state.stats.__all__ && this.state.stats.__all__["200"]) {
+                    return this.state.stats.__all__["200"].chart_points.slice();
                 } else {
                     return [];
                 }
             },
             run_test: function () {
                 var data = this.props.data,
-                    target_uid,
+                    target,
                     key, targets = [],
                     that;
 
