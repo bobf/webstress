@@ -98,21 +98,24 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
                                 if (points.tps && owner.series.length === 1) {
                                     owner.addAxis({
+                                        labels: {
+                                            style: {
+                                                color: 'rgba(252, 23, 65, 0.6)'
+                                            }
+                                        },
                                         title: {
                                             text: 'TPS'
                                         },
-                                        opposite: true
+                                        opposite: true,
+                                        max: 50
                                     }, false);
 
                                     owner.addSeries({
-                                        labels: {
-                                            style: {
-                                                color: "#ffff22"
-                                            }
-                                        },
-                                        type: 'spline',
-                                        name: 'TPS',
-                                        yAxis: 1
+                                        type: 'line',
+                                        name: 'TPS - Transactions [Launched] Per Second',
+                                        yAxis: 1,
+                                        color: 'rgba(252, 23, 65, 0.6)',
+                                        dashStyle: 'ShortDot'
                                     });
                                 }
                                 if (points.tps) {
