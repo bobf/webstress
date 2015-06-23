@@ -70,11 +70,16 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         update = (function (owner) {
                             return function () {
                                 var points = points_getter(),
-                                    stops = WS.util.calculate_stops(points);
+                                    stops = WS.util.calculate_stops(points.values),
+                                    x_axis;
 
                                 if (!owner.series) {
                                     // The chart got re-initialised
                                     clearInterval(that.interval);
+                                    return;
+                                }
+
+                                if (!points.values) {
                                     return;
                                 }
 
@@ -85,7 +90,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                     }
                                 });
 
-                                series.setData(points.slice());
+                                x_axis = owner.xAxis[0];
+                                if (x_axis.type !== points.type) {
+                                    x_axis.update({type: points.type,
+                                                   title: points.title}, true);
+                                }
+                                series.setData(points.values.slice());
                             }
                         })(that)
 
@@ -97,7 +107,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
             },
             title: {
-                text: 'Peak response times'
+                text: 'Peak [successful] response times'
             },
             yAxis: {
                 title: {
@@ -105,8 +115,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
             },
             xAxis: {
+                type: 'linear',
                 title: {
-                    text: 'Number of requests'
+                    text: ''
                 }
             },
             legend: {

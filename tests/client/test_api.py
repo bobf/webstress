@@ -27,18 +27,23 @@ class TestAPI(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_results_have_actual_url(self):
-        results = yield webstress.client.api.run(
-            self.configs, batch_callback=self.noop)
+        all_results = []
+        def batch_callback(results, stats):
+            all_results.extend(results)
 
+        stats = yield webstress.client.api.run(
+            self.configs, batch_callback=batch_callback)
+
+        self.assertEquals(len(all_results), 20)
         # Confirm fake-generated data is stored against individual result
         # We have to hope that we don't get four of the exact same
         # random-generated value :)
-        self.assertTrue(results[0].url != results[1].url or
-                        results[1].url != results[2].url or
-                        results[2].url != results[3].url
+        self.assertTrue(all_results[0].url != all_results[1].url or
+                        all_results[1].url != all_results[2].url or
+                        all_results[2].url != all_results[3].url
                         )
         # Make sure .url isn't re-generated each time
-        self.assertTrue(results[0].url == results[0].url)
+        self.assertTrue(all_results[0].url == all_results[0].url)
 
     @inlineCallbacks
     def test_transactions_per_second(self):
@@ -57,11 +62,10 @@ class TestAPI(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_statistics(self):
-        results = yield webstress.client.api.run(
+        stats = yield webstress.client.api.run(
             self.configs, batch_callback=self.noop)
-
-        result = results[0]
 
         # Not really sure what useful tests we can run on this. Let's just make
         # sure they exist and have at least some amount of coherence
-        self.assertTrue(result.stats["200"]["nadir"] <= result.stats["200"]["peak"])
+        self.assertTrue(stats["test1"]["200"]["nadir"] <= stats["test1"]["200"]["peak"])
+        self.assertTrue(stats["test1"]["200"]["count"] == 10)

@@ -118,7 +118,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             get_points: function () {
                 if (this.state.stats && this.state.stats.__all__ && this.state.stats.__all__["200"]) {
-                    return this.state.stats.__all__["200"].chart_points.slice();
+                    return this.state.stats.__all__["200"].chart_points;
                 } else {
                     return [];
                 }
@@ -254,6 +254,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
                 results.sort();
                 for (i = 0; i < results.length; i ++) {
+                    if (results[i][0] === '__all__') {
+                        continue;
+                    }
                     cls = WS.util.status_code_class(results[i][0]);
                     head.push(<th className={cls}>{results[i][0]}</th>);
                     row.push(<td>{results[i][1]}</td>);
@@ -280,7 +283,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
         DurationStats = React.createClass({
             render: function () {
                 var data = this.props.data,
-                    keys = _.keys(data),
+                    keys = _.chain(data).keys().without('__all__').value(),
                     that = this,
                     rows, histogram;
                 if (_.isEmpty(data)) {

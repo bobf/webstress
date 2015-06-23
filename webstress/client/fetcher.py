@@ -26,13 +26,14 @@ class Client(HTTPClient):
         pass
 
     def connectionLost(self, reason):
-        duration = (datetime.now() - self._target.start_time).total_seconds()
+        end = datetime.now()
 
         success = self._target.success and reason.type == ResponseDone
 
         result = Result(target=self._target,
                       success=self._target.success and reason.type == ResponseDone,
-                      duration=duration,
+                      start_time=self._target.start_time,
+                      end_time=end,
                       url=self._url,
                       # Let's not treat status codes as numeric values
                       status_code=unicode(self._target.status_code))
@@ -67,34 +68,28 @@ class Fetcher(object):
         random.shuffle(self.targets)
 
     def update_stats(self, category, result):
-    """
-    Calculate statistics for each individual target and each individual
-    category, i.e. 200 OK, Failure
-    """
+        """
+        Calculate statistics for each individual target and each individual
+        category, i.e. 200 OK, Failure
+        """
         self.timings.setdefault(result.target.name, {}
             ).setdefault(category, []
-            ).append(result.duration)
+            ).append((result.start_time, result.end_time))
 
         self.timings.setdefault('__all__', {}
             ).setdefault(category, []
-            ).append(result.duration)
+            ).append((result.start_time, result.end_time))
 
         result.stats = {}
         for target in self.timings:
             result.stats.setdefault(target, {})
+            all_time_spans = []
             for key in self.timings[target]:
-                durations = self.timings[target][key]
-                result.stats[target][key] = {
-                    "nadir": stats.nadir(durations),
-                    "peak": stats.peak(durations),
-                    "median": stats.median(durations),
-                    "mean": stats.mean(durations),
-                    "percentiles": stats.percentiles(durations),
-                    "std_deviation": stats.std_deviation(durations),
-                    "histogram": stats.histogram(durations),
-                    "chart_points": stats.chart_points(durations),
-                    "count": len(durations),
-                }
+                time_spans = self.timings[target][key]
+                result.stats[target][key] = stats.generate(time_spans)
+                all_time_spans.extend(time_spans)
+
+            result.stats[target]["__all__"] = stats.generate(all_time_spans)
 
     def get(self, target, method="GET", headers=None):
         if headers is None:
@@ -129,11 +124,12 @@ class Fetcher(object):
         def errback(_response, url):
             target.success = False
 
-            duration = (datetime.now() - target.start_time).total_seconds()
+            end = datetime.now()
             result = Result(
                 target=target,
                 success=False,
-                duration=duration,
+                start_time=target.start_time,
+                end_time=end,
                 url=url,
                 status_code=target.status_code)
             return result
@@ -149,9 +145,15 @@ class Fetcher(object):
         if results:
             try:
                 if self.batch_callback is not None:
-                    return self.batch_callback(results, results[0].stats)
+                    result = max(
+                        results,
+                        key=(lambda x: x.stats['__all__']['__all__']['count']))
+                    return self.batch_callback(results, result.stats)
             finally:
                 self._deque.clear()
+
+    def compile_results(self, results):
+        return max(results, key=lambda x: x.stats['__all__']['__all__']['count']).stats
 
     def cancel_batcher(self, results):
         # Make sure we at least send one batch before we stop
@@ -177,6 +179,8 @@ class Fetcher(object):
 
         self._batcher = task.LoopingCall(self.batch_results)
         self._batcher_d = self._batcher.start(1)
+
+        d.addCallback(self.compile_results)
 
         d.addBoth(self.cancel_batcher)
 

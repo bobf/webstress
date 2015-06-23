@@ -23,24 +23,32 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_records_request_duration(self):
-        result = yield self.client.hit()
+        outer = {'called': False}
+        def batch_callback(results, stats):
+            self.assertTrue(hasattr(results[0], 'duration'))
+            outer['called'] = True
+        stats = yield self.client.hit(batch_callback=batch_callback)
 
-        self.assertTrue(
-            hasattr(result[-1], 'duration')
-        )
+        self.assertTrue(outer['called'])
 
     @inlineCallbacks
     def test_records_status_code(self):
-        result = yield self.client.hit()
+        outer = {'called': False}
+        def batch_callback(results, stats):
+            self.assertTrue(
+                results[-1].status_code, 200
+            )
+            outer['called'] = True
 
-        self.assertTrue(
-            result[-1].status_code, 200
-        )
+        stats = yield self.client.hit(batch_callback=batch_callback)
+
+        self.assertTrue(outer['called'])
+
 
     @inlineCallbacks
     def test_gives_correct_number_of_results(self):
-        result = yield self.client.hit()
+        stats = yield self.client.hit()
 
         self.assertEquals(
-            len(result), 20
+            stats['__all__']['__all__']['count'], 20
         )

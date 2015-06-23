@@ -73,15 +73,21 @@ class Result(object):
     def __init__(self, target, **kwargs):
         self.target = target
         self.success = kwargs["success"]
-        self.duration = kwargs["duration"]
+        self.start_time = kwargs["start_time"]
+        self.end_time = kwargs["end_time"]
         self.url = kwargs["url"]
         self.status_code = kwargs["status_code"]
         self.stats = {}
 
+    @property
+    def duration(self):
+        return (self.end_time - self.start_time).total_seconds()
+
     def to_json(self):
         d = dict(
                 (x, getattr(self, x))
-                for x in ["success", "duration", "url", "status_code", "stats"])
+                for x in ["success", "duration", "url", "status_code", "stats",
+                          "start_time", "end_time"])
         d['target'] = self.target.to_json()
         return d
 
