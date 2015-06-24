@@ -100,26 +100,37 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                     owner.addAxis({
                                         labels: {
                                             style: {
-                                                color: 'rgba(252, 23, 65, 0.6)'
+                                                color: 'rgba(235, 47, 47, 1)'
                                             }
                                         },
                                         title: {
                                             style: {
-                                                color: 'rgba(252, 23, 65, 0.6)'
+                                                color: 'rgba(235, 47, 47, 1)'
                                             },
-                                            text: 'TPS - Transactions [Launched] Per Second'
+                                            text: 'Reported TPS'
                                         },
                                         opposite: true,
-                                        max: 50,
+                                        max: 20,
                                         min: 0
                                     }, false);
 
                                     owner.addSeries({
-                                        type: 'line',
-                                        name: 'TPS - Transactions [Launched] Per Second',
+                                        type: 'spline',
+                                        name: 'Reported TPS',
+                                        enableMouseTracking: false,
+                                        marker: {
+                                            enabled: true,
+                                            fillColor: 'rgba(200, 25, 25, 0.2)',
+                                            symbol: 'circle',
+                                            radius: 3
+                                        },
                                         yAxis: 1,
-                                        color: 'rgba(252, 23, 65, 0.6)',
-                                        dashStyle: 'ShortDot'
+                                        xAxis: 0,
+                                        lineWidth: 2,
+                                        color: 'rgba(235, 47, 47, 0.4)',
+                                        fillColor: 'rgba(235, 47, 47, 0.05)',
+                                        dashStyle: 'Solid',
+                                        zIndex: 3,
                                     });
                                 }
                                 if (points.tps) {
@@ -155,7 +166,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             plotOptions: {
                 areaspline: {
-                    lineColor: '#c2c2c2',
+                    lineColor: 'rgba(100, 100, 100, 0.4)',
                     lineWidth: 1,
                     marker: {
                         enabled: false
@@ -165,7 +176,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
             series: [{
                 type: 'areaspline',
                 name: 'Response time',
-                data: [{marker: {enabled: false}}]
+                data: [{marker: {enabled: false}}],
+                zIndex: 2
             }],
             credits: {
                 enabled: false

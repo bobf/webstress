@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import datetime
 import operator
+import math
+import itertools
 
 import numpy
 
@@ -27,24 +29,57 @@ def histogram(L):
     histogram, edges = numpy.histogram(L, 5)
     return {"histogram": list(histogram), "edges": list(edges)}
 
-def normalise_datetime(dt):
+def normalise_datetime(dt, milliseconds=True):
     """
     Return milliseconds since epoch for a given datetime
     """
     epoch = datetime.datetime.utcfromtimestamp(0)
-    x = (dt - epoch).total_seconds() * 1000
-    return x
+    x = (dt - epoch).total_seconds()
+    if milliseconds:
+        return x * 1000
+    else:
+        return x
 
-def chart_points(time_spans, durations, num_points=100):
+# Borrowed from http://stackoverflow.com/a/8991553
+def grouper(n, iterable):
+    it = iter(iterable)
+    while True:
+       chunk = tuple(itertools.islice(it, n))
+       if not chunk:
+           return
+       yield chunk
+
+def calculate_tps(chunks):
+    def to_nearest_second(v):
+        return math.ceil(normalise_datetime(v[1], milliseconds=False))
+
+    tps = []
+
+    for start_time, durations in chunks:
+        timespans = [x['timespan'] for x in durations]
+        timespans.sort(key=to_nearest_second)
+        groups = itertools.groupby(timespans, to_nearest_second)
+        for key, timespan_group in groups:
+            requests = list(timespan_group)
+            tps.append((key * 1000, len(requests)))
+
+    result = []
+    for chunk in grouper(10, tps):
+        end = max(x[0] for x in chunk)
+        avg = mean([x[1] for x in chunk])
+        result.append((end, avg))
+    return result
+
+def chart_points(timespans, durations, num_points=100):
     """
     Given a sequence of time spans and durations, calculate chart points for
     response time over time. Generate no more than `num_points` points - take
     peak time over `num_points` periods in time if input is > `num-points`
     """
     earliest = normalise_datetime(
-        min(time_spans, key=operator.itemgetter(0))[0])
+        min(timespans, key=operator.itemgetter(0))[0])
     latest = normalise_datetime(
-        max(time_spans, key=operator.itemgetter(0))[0])
+        max(timespans, key=operator.itemgetter(0))[0])
 
     if latest - earliest < 1:
         # All responses returned in < 1 second, show number of requests instead
@@ -55,32 +90,25 @@ def chart_points(time_spans, durations, num_points=100):
                             num_points=num_points)
         }
 
-    if len(durations) <= num_points:
-        # [duration, start time] for each L
-        return {'type': 'datetime',
-                'title': 'Time',
-                'values': [ [normalise_datetime(t[0]), d]
-                 for d, t in zip(durations, time_spans) ]
-                }
-
     period = (latest - earliest) / num_points
     next_time = earliest + period
     chunk = []
     chunks = []
-    for duration, time_span in zip(durations, time_spans):
-        if normalise_datetime(time_span[0]) > next_time:
+    for duration, timespan in zip(durations, timespans):
+        if normalise_datetime(timespan[0]) > next_time:
             chunks.append((next_time - period, chunk))
             chunk = []
             next_time += period
-        chunk.append(duration)
+        chunk.append({"duration": duration, "timespan": timespan})
 
-    points = [ [start_time, peak(durations)]
-               for start_time, durations in chunks ]
+    points = [ [start_time, peak([x['duration'] for x in chunk])]
+               for start_time, chunk in chunks ]
 
-    tps = [ [start_time, len(durations)]
-            for start_time, durations in chunks ]
-
-    return {'type': 'datetime', 'title': 'Time', 'values': points, 'tps': tps}
+    tps = calculate_tps(chunks)
+    return {'type': 'datetime',
+            'title': 'Time',
+            'values': points,
+            'tps': tps}
 
 def chart_points_linear(L, num_points=100):
     """
@@ -106,13 +134,13 @@ def chart_points_linear(L, num_points=100):
 
     return points
 
-def generate(time_spans):
+def generate(timespans):
     """
     Generate statistics on given time spans. Expects a sequence of 2-element
     tuples (start, end) as datetime objects
     """
     durations = [(end - start).total_seconds()
-                 for start, end in time_spans]
+                 for start, end in timespans]
 
     return {"nadir": nadir(durations),
             "peak": peak(durations),
@@ -121,6 +149,6 @@ def generate(time_spans):
             "percentiles": percentiles(durations),
             "std_deviation": std_deviation(durations),
             "histogram": histogram(durations),
-            "chart_points": chart_points(time_spans, durations),
+            "chart_points": chart_points(timespans, durations),
             "count": len(durations),
     }
