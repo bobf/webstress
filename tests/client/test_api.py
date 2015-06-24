@@ -12,6 +12,7 @@ class TestAPI(twisted.trial.unittest.TestCase):
     def setUp(self):
         self.noop = lambda *_, **__: None
         self.configs = [{"name": "test", "body": std_sample_config}]
+        webstress.client.api.update_config(self.configs)
 
     @inlineCallbacks
     def test_batching_callbacks(self):

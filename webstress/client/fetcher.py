@@ -3,12 +3,15 @@ from __future__ import unicode_literals
 from datetime import datetime
 import random
 import collections
+import weakref
+from Queue import Queue, Empty as QueueEmpty
 
 from twisted.internet import reactor, task
 from twisted.web.client import Agent, ResponseDone
 from twisted.web.http_headers import Headers
 from twisted.web.http import HTTPClient
 from twisted.internet import defer
+from twisted.python import log
 
 from webstress.common.types import Result
 from webstress.util import stats
@@ -50,6 +53,19 @@ class Client(HTTPClient):
 
         self._deferred.callback(result)
 
+class Worker(object):
+    def __init__(self, queue):
+        self.queue = queue
+
+    @defer.inlineCallbacks
+    def start(self):
+        while True:
+            job = yield self.queue.get()
+            if job is None:
+                # I was asked to die
+                break
+            ready = yield job()
+
 class Fetcher(object):
     def __init__(self, encoding):
         self.agent = Agent(reactor)
@@ -59,13 +75,51 @@ class Fetcher(object):
         self.timings = {}
         self._deque = collections.deque()
         self._batcher = None
+        self._active_jobs = weakref.WeakSet()
+        self._queue = defer.DeferredQueue()
 
     def add_targets(self, targets):
+        """
+        Add targets to test
+        """
         for target in targets:
             for _ in xrange(target.hits):
                 self.targets.append(target)
         # Order shouldn't matter ?
         random.shuffle(self.targets)
+
+
+    def results(self, tps=None, max_active_jobs=None):
+        """
+        This is where everything is initiated and gathered when running a test
+        """
+        if tps is not None:
+            # Throttle transactions per second
+            delay = 1.0 / tps
+            deferreds = []
+            for i, target in enumerate(self.targets):
+                def get(target, i):
+                    def closure():
+                        return task.deferLater(reactor, delay * i, self.get, target)
+                    return closure()
+                deferreds.append(get(target, i))
+            d = defer.gatherResults(deferreds)
+        else:
+            d = defer.gatherResults(self.get(target) for target in self.targets)
+
+        # Send results to clients in batches every one second
+        self._batcher = task.LoopingCall(self.batch_results)
+        self._batcher_d = self._batcher.start(1)
+
+        d.addCallback(self.compile_results)
+
+        d.addBoth(self.cleanup)
+
+        self.create_workers(max_active_jobs)
+        for worker in self.workers:
+            worker.start()
+
+        return d
 
     def update_stats(self, category, result):
         """
@@ -91,22 +145,54 @@ class Fetcher(object):
 
             result.stats[target]["__all__"] = stats.generate(all_time_spans)
 
+    def create_workers(self, n):
+        """
+        Create `n` workers to run concurrent requests, consuming each job from
+        a DeferredQueue `self.queue`
+
+        This effectively limits the number of concurrent transactions
+        """
+        default = 5
+        if n is None:
+            log.msg("No max active jobs specified, defaulting to %s" % (default,))
+            n = default
+        log.msg("Spawning %s workers" % (n,))
+        self.workers = [Worker(self._queue) for _ in xrange(n)]
+
+    @property
+    def active_job_count(self):
+        return len([x for x in self._active_jobs if not x.called])
+
     def get(self, target, method="GET", headers=None):
-        if headers is None:
-            headers = dict()
-        target.start_time = datetime.now()
-        url = target.url
-        d = self.agent.request(
-            method.encode(self.encoding),
-            url.encode(self.encoding),
-            Headers(headers),
-            None)
-        complete_callback, complete_errback = self.get_callbacks(target)
+        """
+        Return a deferred that will be fired when the HTTP request has been
+        picked up from the queue and finished processing by one of the workers
+        """
+        response_d = defer.Deferred()
 
-        d.addCallback(complete_callback, url)
-        d.addErrback(complete_errback, url)
+        def closure():
+            target.start_time = datetime.now()
+            url = target.url
+            d = self.agent.request(
+                method.encode(self.encoding),
+                url.encode(self.encoding),
+                Headers(headers or dict()),
+                None)
+            complete_callback, complete_errback = self.get_callbacks(target)
 
-        return d
+            d.addCallback(complete_callback, url
+                ).addErrback(complete_errback, url)
+
+            self._active_jobs.add(d)
+
+            def cb(result):
+                response_d.callback(result)
+                return result
+            d.addCallback(cb)
+            return d
+
+        self._queue.put(closure)
+        return response_d
 
     def get_callbacks(self, target):
         def callback(response, url):
@@ -155,33 +241,14 @@ class Fetcher(object):
     def compile_results(self, results):
         return max(results, key=lambda x: x.stats['__all__']['__all__']['count']).stats
 
-    def cancel_batcher(self, results):
+    def cleanup(self, results):
         # Make sure we at least send one batch before we stop
         self.batch_results()
         if self._batcher is not None:
             self._batcher.stop()
+
+        for _ in xrange(len(self.workers)):
+            # Ask all workers to die
+            self._queue.put(None)
+
         return results
-
-    def results(self, tps=None):
-        if tps is not None:
-            # Throttle transactions per second
-            delay = 1.0 / tps
-            deferreds = []
-            for i, target in enumerate(self.targets):
-                def get(target, i):
-                    def closure():
-                       return task.deferLater(reactor, delay * i, self.get, target)
-                    return closure()
-                deferreds.append(get(target, i))
-            d = defer.gatherResults(deferreds)
-        else:
-            d = defer.gatherResults(self.get(target) for target in self.targets)
-
-        self._batcher = task.LoopingCall(self.batch_results)
-        self._batcher_d = self._batcher.start(1)
-
-        d.addCallback(self.compile_results)
-
-        d.addBoth(self.cancel_batcher)
-
-        return d

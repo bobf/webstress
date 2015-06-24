@@ -9,7 +9,7 @@ def run(configs, batch_callback=None):
 
     return launch_all_tests(batch_callback)
 
-def launch_all_tests(batch_callback):
+def launch_all_tests(batch_callback, max_active_jobs=None):
     targets = []
     for config in webstress.configuration.configs.values():
         targets.extend(config["targets"])
@@ -18,14 +18,19 @@ def launch_all_tests(batch_callback):
     for target in targets:
         http.add_target(target)
 
-    return http.hit(batch_callback=batch_callback)
+    return http.hit(
+        batch_callback=batch_callback,
+        max_active_jobs=max_active_jobs)
 
 def launch_test(config, targets, batch_callback=None):
     http = webstress.client.http.HTTP(webstress.configuration.encoding)
     for target in targets:
         http.add_target(target)
 
-    return http.hit(batch_callback=batch_callback, tps=config["tps"])
+    return http.hit(
+        batch_callback=batch_callback,
+        tps=config["tps"],
+        max_active_jobs=config["max_active_jobs"])
 
 def update_config(configs):
     # Takes a list of dicts, each dict is one config

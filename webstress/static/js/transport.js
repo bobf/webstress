@@ -104,10 +104,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                             }
                                         },
                                         title: {
-                                            text: 'TPS'
+                                            style: {
+                                                color: 'rgba(252, 23, 65, 0.6)'
+                                            },
+                                            text: 'TPS - Transactions [Launched] Per Second'
                                         },
                                         opposite: true,
-                                        max: 50
+                                        max: 50,
+                                        min: 0
                                     }, false);
 
                                     owner.addSeries({
