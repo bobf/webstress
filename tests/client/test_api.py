@@ -70,3 +70,4 @@ class TestAPI(twisted.trial.unittest.TestCase):
         # sure they exist and have at least some amount of coherence
         self.assertTrue(stats["test1"]["200"]["nadir"] <= stats["test1"]["200"]["peak"])
         self.assertTrue(stats["test1"]["200"]["count"] == 10)
+        self.assertTrue(stats["test1"]["200"]["chart_points"]["tps"])

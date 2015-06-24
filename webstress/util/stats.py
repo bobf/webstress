@@ -64,11 +64,11 @@ def calculate_tps(chunks):
             tps.append((key * 1000, len(requests)))
 
     result = []
-    for chunk in grouper(10, tps):
+    for chunk in grouper(20, tps):
         end = max(x[0] for x in chunk)
         avg = mean([x[1] for x in chunk])
         result.append((end, avg))
-    return result
+    return {'values': result, 'mean': mean([x[1] for x in result])}
 
 def chart_points(timespans, durations, num_points=100):
     """
@@ -87,7 +87,8 @@ def chart_points(timespans, durations, num_points=100):
                 'title': 'Requests',
                 'values': chart_points_linear(
                             durations,
-                            num_points=num_points)
+                            num_points=num_points),
+                'tps': {}
         }
 
     period = (latest - earliest) / num_points
@@ -95,7 +96,7 @@ def chart_points(timespans, durations, num_points=100):
     chunk = []
     chunks = []
     for duration, timespan in zip(durations, timespans):
-        if normalise_datetime(timespan[0]) > next_time:
+        if normalise_datetime(timespan[0]) > next_time and chunk:
             chunks.append((next_time - period, chunk))
             chunk = []
             next_time += period

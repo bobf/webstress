@@ -13,7 +13,10 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
     WS.util = {
         format: function (value, precision) {
-            return value.toFixed(precision) || '';
+            if (typeof value !== 'number') {
+                return '';
+            }
+            return value.toPrecision(precision) || '';
         },
 
         status_code_class: function (value) {
@@ -96,7 +99,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                                    title: points.title}, true);
                                 }
 
-                                if (points.tps && owner.series.length === 1) {
+                                if (points.tps.values && owner.series.length === 1) {
                                     owner.addAxis({
                                         labels: {
                                             style: {
@@ -133,8 +136,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                         zIndex: 3,
                                     });
                                 }
-                                if (points.tps) {
-                                    owner.series[1].setData(points.tps.slice(), true);
+                                if (points.tps.values) {
+                                    owner.series[1].setData(points.tps.values.slice(), true);
                                 }
                                 owner.series[0].setData(points.values.slice());
                             }

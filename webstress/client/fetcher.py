@@ -93,6 +93,8 @@ class Fetcher(object):
         """
         This is where everything is initiated and gathered when running a test
         """
+        self._test_start_time = datetime.now()
+
         if tps is not None:
             # Throttle transactions per second
             delay = 1.0 / tps
@@ -120,6 +122,22 @@ class Fetcher(object):
             worker.start()
 
         return d
+
+    @property
+    def test_run_time(self):
+        seconds = (datetime.now() - self._test_start_time).total_seconds()
+        minutes, s = divmod(seconds, 60)
+        h, m = divmod(minutes, 60)
+        if h:
+            return "%dh%2dm%2ds" % (h, m, s)
+        elif m:
+            return "%2dm%2ds" % (m, s)
+        else:
+            return "%2ds" % (s,)
+
+    @property
+    def test_start_time(self):
+        return unicode(self._test_start_time.strftime("%c"))
 
     def update_stats(self, category, result):
         """
@@ -234,6 +252,8 @@ class Fetcher(object):
                     result = max(
                         results,
                         key=(lambda x: x.stats['__all__']['__all__']['count']))
+                    result.stats['__all__']['__all__']['start_time'] = self.test_start_time
+                    result.stats['__all__']['__all__']['run_time'] = self.test_run_time
                     return self.batch_callback(results, result.stats)
             finally:
                 self._deque.clear()

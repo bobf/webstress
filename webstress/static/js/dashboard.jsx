@@ -24,7 +24,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         return (<Target data={target} />);
                     }),
                     response_codes,
-                    state, tps, duration_stats;
+                    state, tps, duration_stats, run_time_stats;
                 WS.targets[data.name] = {};
 
                 response_codes = (
@@ -53,11 +53,18 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
 
                 if (this.state.stats.__all__) {
+                    run_time_stats = (
+                        <div>
+                          {this.state.stats.__all__.__all__.start_time}<br/>
+                          (run time: {this.state.stats.__all__.__all__.run_time})
+                        </div>
+                    );
                     duration_stats = (
                         <DurationStats data={this.state.stats.__all__} />
                         );
                 } else {
                     duration_stats = '';
+                    run_time_stats = '';
                 }
 
                 return (
@@ -70,6 +77,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <td><button className="run-button"
                                  onClick={this.run_test}>Run Test</button></td>
                         <td>{tps}</td>
+                        <td>{run_time_stats}</td>
                       </tr>
                       </tbody>
                       </table>
@@ -297,7 +305,13 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         mean = data[key].mean,
                         median = data[key].median,
                         percentiles = data[key].percentiles,
-                        std_deviation = data[key].std_deviation
+                        std_deviation = data[key].std_deviation,
+                        mean_tps;
+                    if (data[key].chart_points) {
+                        mean_tps = data[key].chart_points.tps.mean;
+                    } else {
+                        mean_tps = null;
+                    }
                     return (
                         <tr>
                           <td className={WS.util.status_code_class(key)}>{key}</td>
@@ -305,6 +319,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                           <td className={WS.util.severity(nadir)}>{WS.util.format(nadir, 2)}</td>
                           <td className={WS.util.severity(mean)}>{WS.util.format(mean, 2)}</td>
                           <td className={WS.util.severity(median)}>{WS.util.format(median, 2)}</td>
+                          <td>{WS.util.format(mean_tps, 2)}</td>
                         </tr>
                     );
                 }, this);
@@ -325,6 +340,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <th>Nadir</th>
                         <th>Mean</th>
                         <th>Median</th>
+                        <th className="nowrap">Mean TPS</th>
                     </thead>
                     <tbody>
                         {rows}
@@ -372,7 +388,6 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 );
             }
         });
-
 
     $content = $('<div class="grid"></div>');
 
