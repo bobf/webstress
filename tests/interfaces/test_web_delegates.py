@@ -22,8 +22,7 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
         self.transport = webstress.interfaces.web.Transport()
         self.transport.register_delegate(self.delegate)
 
-    @inlineCallbacks
-    def test_launch_basic_test(self):
+    def _basic_test(self):
         self.transport.send = MagicMock(return_value=None)
 
         json = dumps(
@@ -39,11 +38,17 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
             }
         )
 
-        response = (yield gatherResults(self.transport.build_and_execute_responses(json)))[0]
+        self.transport.callRemote = MagicMock()
 
+        return gatherResults(self.transport.build_and_execute_responses(json))
+
+
+    @inlineCallbacks
+    def test_launch_basic_test(self):
+        responses = yield self._basic_test()
         self.assertTrue(self.delegate.called)
-        self.assertTrue(response.result['uid'] == 9999)
-        self.assertTrue(response.delegate is self.delegate)
+        self.assertTrue(responses[0].result['uid'] == 9999)
+        self.assertTrue(responses[0].delegate is self.delegate)
 
     @inlineCallbacks
     def test_list_available_tests(self):
@@ -60,3 +65,31 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
         self.assertTrue(method == 'configs')
         self.assertTrue(params[0]['name'] == 'test_config')
         self.assertTrue(params[1]['name'] == 'test_config_2')
+
+    @inlineCallbacks
+    def test_stop_test(self):
+        state = {'failed': False}
+        def failure(_):
+            state['failed'] = True
+
+        test_d = self._basic_test()
+        test_d.addErrback(failure)
+
+        self.transport.callRemote = MagicMock()
+        json = dumps(
+            {"method": "stop_test",
+             "kwargs": {
+                'uid': webstress.configuration.configs['test_config'].uid
+             }
+            }
+        )
+
+
+        responses = yield gatherResults(self.transport.build_and_execute_responses(json))
+        d_results = yield test_d
+
+        self.assertTrue(state['failed'])
+
+        #(method, params, _), __ = self.transport.callRemote.call_args
+
+        #self.assertTrue(method == "stop_test")

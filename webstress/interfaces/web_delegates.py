@@ -1,3 +1,5 @@
+import weakref
+
 import webstress.client.api
 import webstress.config.parser
 
@@ -23,6 +25,7 @@ class Delegate(object):
 
     def __init__(self):
         self.called = False
+        self._tests = dict()
 
     def _call(self, method, args, kwargs):
         for handler in self._handlers:
@@ -58,6 +61,15 @@ class StressTestDelegate(Delegate):
         configs = webstress.configuration.list_configs(to_json=True)
         self._transport.send("configs", *configs)
 
+    @expose
+    def stop_test(self, uid=None):
+        if uid in self._tests:
+            # Make this an API call that filters back down
+            self._tests[uid]['deferred'].cancel()
+
+            self._transport.send("stopped_test", **{u"uid": uid})
+
+
     def make_test_deferred(self, targets, uid):
         def batch_callback(results, stats):
             response = {u"stats": stats, u"uid": uid}
@@ -68,11 +80,11 @@ class StressTestDelegate(Delegate):
             return {u"uid": uid}
 
         config = webstress.configuration.configs[targets[0].owner]
-
         d = webstress.client.api.launch_test(
             config, targets,
             batch_callback=batch_callback)
-
         d.addCallback(all_callback)
+
+        self._tests[config.uid] = {'config': config, 'deferred': d}
 
         return d

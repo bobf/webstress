@@ -54,17 +54,37 @@ class Client(HTTPClient):
         self._deferred.callback(result)
 
 class Worker(object):
+    """
+    A worker that consumes closures from a DeferredQueue.
+
+    When the closure is received it is executed and its result discarded.
+
+    `tps_delay` is interpreted naively - the worker is not aware of other
+    workers so this must be a fraction of the total delay relative to the
+    number of workers. On average this probably works out that the TPS is
+    maintained closely.
+    """
     def __init__(self, queue):
         self.queue = queue
+        self.tps_delay = 0
 
     @defer.inlineCallbacks
     def start(self):
+        completed_time = datetime.max
         while True:
             job = yield self.queue.get()
             if job is None:
                 # I was asked to die
                 break
-            ready = yield job()
+            delay = self.tps_delay - max(
+                (datetime.now() - completed_time).total_seconds(),
+                0)
+            if delay > 0:
+                # Don't exceed TPS throttle
+                _ = yield task.deferLater(reactor, delay, job)
+            else:
+                _ = yield job()
+            completed_time = datetime.now()
 
 class Fetcher(object):
     def __init__(self, encoding):
@@ -88,26 +108,17 @@ class Fetcher(object):
         # Order shouldn't matter ?
         random.shuffle(self.targets)
 
-
     def results(self, tps=None, max_active_jobs=None):
         """
         This is where everything is initiated and gathered when running a test
         """
         self._test_start_time = datetime.now()
 
-        if tps is not None:
-            # Throttle transactions per second
-            delay = 1.0 / tps
-            deferreds = []
-            for i, target in enumerate(self.targets):
-                def get(target, i):
-                    def closure():
-                        return task.deferLater(reactor, delay * i, self.get, target)
-                    return closure()
-                deferreds.append(get(target, i))
-            d = defer.gatherResults(deferreds)
-        else:
-            d = defer.gatherResults(self.get(target) for target in self.targets)
+        self._tps = tps
+
+        d = defer.gatherResults(self.get(target) for target in self.targets)
+
+        d.addErrback(self.cancel)
 
         # Send results to clients in batches every one second
         self._batcher = task.LoopingCall(self.batch_results)
@@ -122,6 +133,17 @@ class Fetcher(object):
             worker.start()
 
         return d
+
+    @property
+    def tps_delay(self):
+        """
+        Work out the minimum time to delay a request in order to prevent
+        passing TPS threshold
+        """
+        if self._tps is None:
+            return 0
+        else:
+            return (1.0 / self._tps) / len(self.workers)
 
     @property
     def test_run_time(self):
@@ -163,6 +185,13 @@ class Fetcher(object):
 
             result.stats[target]["__all__"] = stats.generate(all_time_spans)
 
+    def set_tps_delay(self, delay=None):
+        if delay is None:
+            delay = self.tps_delay
+
+        for worker in self.workers:
+            worker.tps_delay = delay
+
     def create_workers(self, n):
         """
         Create `n` workers to run concurrent requests, consuming each job from
@@ -175,7 +204,9 @@ class Fetcher(object):
             log.msg("No max active jobs specified, defaulting to %s" % (default,))
             n = default
         log.msg("Spawning %s workers" % (n,))
-        self.workers = [Worker(self._queue) for _ in xrange(n)]
+        self.workers = [ Worker(self._queue)
+                         for _ in xrange(n) ]
+        self.set_tps_delay()
 
     @property
     def active_job_count(self):
@@ -272,3 +303,13 @@ class Fetcher(object):
             self._queue.put(None)
 
         return results
+
+    def cancel(self, failure):
+        """
+        I got told to stop or an error happened; attempt to clean up
+        """
+        self.cancelled = True
+        self.cleanup()
+        self._failure = failure
+        log.msg('Stopping test: %s' % (failure,))
+

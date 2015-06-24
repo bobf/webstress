@@ -41,6 +41,17 @@ def callify_param_values(config):
             param = callify(param)
     return config
 
+class UIDDict(dict):
+    """
+    Subclassing an built-in. :(
+    """
+    @property
+    def uid(self):
+        """
+        I'm only giving it a .uid property that gives back a unique but
+        reliable hash ID
+        """
+        return hash_dict(self)
 
 class Config(object):
     # For reading from a filesystem - is there any sane way to do this ?
@@ -54,7 +65,7 @@ class Config(object):
 
             name = source["name"].decode(self.encoding)
 
-            config = dict()
+            config = UIDDict()
             config["name"] = name
             config["tps"] = parsed.get("tps")
             config["max_active_jobs"] = parsed.get("max_active_jobs")
@@ -84,10 +95,10 @@ class Config(object):
 
         if to_json:
             for config in [self.configs[x] for x in self.configs]:
-                config = dict(config)
+                config = UIDDict(config)
                 config["targets"] = [x.to_json() for x in config["targets"]]
                 config.pop("uid", None)
-                config["uid"] = hash_dict(config)
+                config["uid"] = config.uid
                 configs.append(config)
         else:
             configs = [self.configs[x] for x in self.configs]
