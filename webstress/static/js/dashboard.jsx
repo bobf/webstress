@@ -47,7 +47,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
 
                 if (data.tps) {
-                    tps = (<div className="tps"><h2>TPS Throttle:</h2>{data.tps}</div>);
+                    tps = (<div className="tps"><h2 className="nowrap">TPS Throttle: </h2>{data.tps}</div>);
                 } else {
                     tps = '';
                 }
@@ -55,8 +55,16 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 if (this.state.stats.__all__) {
                     run_time_stats = (
                         <div>
-                          {this.state.stats.__all__.__all__.start_time}<br/>
-                          (run time: {this.state.stats.__all__.__all__.run_time})
+                          <table className="run-times">
+                            <tbody>
+                              <tr>
+                                <td className="start-time nowrap">{this.state.stats.__all__.__all__.start_time}</td>
+                              </tr>
+                              <tr>
+                                <td className="run-time nowrap">Run time: {this.state.stats.__all__.__all__.run_time}</td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </div>
                     );
                     duration_stats = (
@@ -74,7 +82,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       <tr>
                         <td><h1 className="config-name">{data.name}</h1></td>
                         <td><div>{state}</div></td>
-                        <td><button className="run-button"
+                        <td><button className="run-button nowrap"
                                  onClick={this.run_test}>Run Test</button></td>
                         <td>{tps}</td>
                         <td>{run_time_stats}</td>

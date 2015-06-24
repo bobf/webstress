@@ -83,7 +83,7 @@ body {
 
           span.arrows {
             font-weight: normal;
-            color: $light-grey;
+            color: $white;
           }
 
           width: 30px;
@@ -241,5 +241,12 @@ td, th {
 
   &.failure {
     background-color: $red;
+  }
+}
+
+table.run-times {
+  tbody td {
+    font-family: $sans-serif;
+    background-color: $light-grey;
   }
 }

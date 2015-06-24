@@ -49,26 +49,34 @@ def grouper(n, iterable):
            return
        yield chunk
 
-def calculate_tps(chunks):
+def calculate_tps(timespans, durations, max_points=20):
+    """
+    Calculate [completed] Transactions Per Second given a set of timespans and
+    durations.
+
+    Returns chart points based over time and the mean
+    """
     def to_nearest_second(v):
         return math.ceil(normalise_datetime(v[1], milliseconds=False))
 
     tps = []
 
-    for start_time, durations in chunks:
-        timespans = [x['timespan'] for x in durations]
-        timespans.sort(key=to_nearest_second)
-        groups = itertools.groupby(timespans, to_nearest_second)
-        for key, timespan_group in groups:
-            requests = list(timespan_group)
-            tps.append((key * 1000, len(requests)))
+    timespans.sort(key=to_nearest_second)
 
-    result = []
-    for chunk in grouper(20, tps):
-        end = max(x[0] for x in chunk)
-        avg = mean([x[1] for x in chunk])
-        result.append((end, avg))
-    return {'values': result, 'mean': mean([x[1] for x in result])}
+    groups = itertools.groupby(timespans, to_nearest_second)
+    for key, timespan_group in groups:
+        requests = list(timespan_group)
+        tps.append((key * 1000, len(requests)))
+
+    end = max( timespans, key=lambda x: x[1] )[1]
+    start = min( timespans, key=lambda x: x[0] )[0]
+
+    avg = len(timespans) / (end - start).total_seconds()
+
+    points = []
+    for chunk in grouper((len(tps) / max_points) or 1, tps):
+        points.append(( chunk[-1][0], mean([x[1] for x in chunk]) ))
+    return {'values': points, 'mean': avg}
 
 def chart_points(timespans, durations, num_points=100):
     """
@@ -77,9 +85,9 @@ def chart_points(timespans, durations, num_points=100):
     peak time over `num_points` periods in time if input is > `num-points`
     """
     earliest = normalise_datetime(
-        min(timespans, key=operator.itemgetter(0))[0])
+        min(timespans, key=operator.itemgetter(1))[1])
     latest = normalise_datetime(
-        max(timespans, key=operator.itemgetter(0))[0])
+        max(timespans, key=operator.itemgetter(1))[1])
 
     if latest - earliest < 1:
         # All responses returned in < 1 second, show number of requests instead
@@ -91,21 +99,34 @@ def chart_points(timespans, durations, num_points=100):
                 'tps': {}
         }
 
-    period = (latest - earliest) / num_points
-    next_time = earliest + period
+    tps = calculate_tps(timespans, durations)
+
+    average_period = (latest - earliest) / num_points
+    periods = iter([
+        (
+          earliest + (i * average_period),
+          earliest + ((i + 1) * average_period)
+        ) for i in xrange(num_points)])
+
     chunk = []
-    chunks = []
-    for duration, timespan in zip(durations, timespans):
-        if normalise_datetime(timespan[0]) > next_time and chunk:
-            chunks.append((next_time - period, chunk))
-            chunk = []
-            next_time += period
-        chunk.append({"duration": duration, "timespan": timespan})
+    points = []
 
-    points = [ [start_time, peak([x['duration'] for x in chunk])]
-               for start_time, chunk in chunks ]
+    timespans.sort(key=operator.itemgetter(1))
+    timespans = iter((normalise_datetime(s), normalise_datetime(e))
+                      for s, e in timespans)
 
-    tps = calculate_tps(chunks)
+    start, end = timespans.next()
+    for lower_limit, upper_limit in periods:
+        chunk = []
+        while lower_limit <= end < upper_limit:
+            chunk.append(end - start)
+            try:
+                start, end = timespans.next()
+            except StopIteration:
+                break
+        if chunk:
+            points.append((upper_limit, peak(chunk) / 1000))
+
     return {'type': 'datetime',
             'title': 'Time',
             'values': points,
