@@ -13,7 +13,7 @@ from twisted.web.http import HTTPClient
 from twisted.internet import defer
 from twisted.python import log
 
-from webstress.common.types import Result
+from webstress.common.types import Result, TestStopped
 from webstress.util import stats
 
 class Client(HTTPClient):
@@ -63,19 +63,26 @@ class Worker(object):
     workers so this must be a fraction of the total delay relative to the
     number of workers. On average this probably works out that the TPS is
     maintained closely.
+
+    I die slowly when asked to, either when my stop() method is called, or None
+    is fed to me by my queue.
     """
     def __init__(self, queue):
         self.queue = queue
         self.tps_delay = 0
+        self._stopped = False
+        self._stop_d = None
 
     @defer.inlineCallbacks
     def start(self):
         completed_time = datetime.max
         while True:
             job = yield self.queue.get()
-            if job is None:
+
+            if job is None or self._stopped:
                 # I was asked to die
                 break
+
             delay = self.tps_delay - max(
                 (datetime.now() - completed_time).total_seconds(),
                 0)
@@ -85,6 +92,19 @@ class Worker(object):
             else:
                 _ = yield job()
             completed_time = datetime.now()
+
+        if self._stop_d is not None:
+            # Notify my killer that I am dead
+            self._stop_d.callback(None)
+
+    def stop(self):
+        """
+        Die slowly. Wait until any remaining connections have completed and
+        then notify my caller by triggering the returned deferred.
+        """
+        self._stopped = True
+        self._stop_d = defer.Deferred()
+        return self._stop_d
 
 class Fetcher(object):
     def __init__(self, encoding):
@@ -109,15 +129,19 @@ class Fetcher(object):
         # Order shouldn't matter ?
         random.shuffle(self.targets)
 
-    def results(self, tps=None, max_active_jobs=None):
+    def results(self, config):
         """
         This is where everything is initiated and gathered when running a test
         """
+        config._fetcher = self
+
         self._test_start_time = datetime.now()
 
-        self._tps = tps
+        self._tps = config['tps']
 
         d = defer.gatherResults(self.get(target) for target in self.targets)
+
+        self._gatherer_deferred = d
 
         d.addErrback(self.cancel)
 
@@ -129,7 +153,7 @@ class Fetcher(object):
 
         d.addCallbacks(self.cleanup, self.fail)
 
-        self.create_workers(max_active_jobs)
+        self.create_workers(config['max_active_jobs'])
         for worker in self.workers:
             worker.start()
 
@@ -228,6 +252,7 @@ class Fetcher(object):
                 url.encode(self.encoding),
                 Headers(headers or dict()),
                 None)
+
             complete_callback, complete_errback = self.get_callbacks(target)
 
             d.addCallback(complete_callback, url
@@ -312,31 +337,52 @@ class Fetcher(object):
         # statistics. Otherwise some unprocessed results could still be in
         # the queue.
         self.batch_results()
-        return self.stats
+        if result is TestStopped:
+            return result
+        else:
+            return self.stats
 
     def fail(self, failure):
         log.msg("Test aborted, cleaning up: %s" % (failure,))
         self.cleanup(None)
         return failure
 
+    @defer.inlineCallbacks
     def cleanup(self, result):
+        """
+        Clean up any outstanding batch/LoopingCall jobs, cleanly kill all
+        workers and prevent any further requests from taking place
+        """
         # Make sure we at least send one batch before we stop
         self.batch_results()
-        if self._batcher is not None:
+        if self._batcher is not None and self._batcher.running:
             self._batcher.stop()
 
+        deferreds = [w.stop() for w in self.workers]
         for _ in xrange(len(self.workers)):
-            # Ask all workers to die
+            # Make sure any workers waiting for a job can check if they need to
+            # die
             self._queue.put(None)
+        done_stopping = yield defer.gatherResults(deferreds)
 
-        return result
+        defer.returnValue(result)
 
-    def cancel(self, failure):
+    def stop(self):
+        """
+        I was politely asked to stop
+        """
+        self.cancel(TestStopped)
+        self._gatherer_deferred.callback([])
+
+    def cancel(self, failure=None):
         """
         I got told to stop or an error happened; attempt to clean up
         """
         self.cancelled = True
-        self.cleanup()
+        self.cleanup(None)
         self._failure = failure
-        log.msg('Stopping test: %s' % (failure,))
-
+        if failure is TestStopped:
+            log.msg('Stopping test cleanly: test stopped by user')
+        else:
+            log.msg('Stopping test abnormally: %s' % (failure,))
+            return failure

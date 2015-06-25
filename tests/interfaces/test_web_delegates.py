@@ -68,14 +68,8 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_stop_test(self):
-        state = {'failed': False}
-        def failure(_):
-            state['failed'] = True
-
         test_d = self._basic_test()
-        test_d.addErrback(failure)
 
-        self.transport.callRemote = MagicMock()
         json = dumps(
             {"method": "stop_test",
              "kwargs": {
@@ -84,12 +78,7 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
             }
         )
 
-
         responses = yield gatherResults(self.transport.build_and_execute_responses(json))
-        d_results = yield test_d
+        test_results = yield test_d
 
-        self.assertTrue(state['failed'])
-
-        #(method, params, _), __ = self.transport.callRemote.call_args
-
-        #self.assertTrue(method == "stop_test")
+        self.assertTrue(webstress.configuration.configs['test_config']._fetcher.cancelled)

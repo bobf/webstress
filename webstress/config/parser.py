@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import yaml
 from faker import Factory
 
-from webstress.common.types import Target
+from webstress.common.types import Target, UIDDict
 from webstress.common.exceptions import (NonUniqueConfigNames,
                                          NonUniqueTargetNames,
                                          TargetNotFound)
@@ -40,18 +40,6 @@ def callify_param_values(config):
         for param in target.get("params", []):
             param = callify(param)
     return config
-
-class UIDDict(dict):
-    """
-    Subclassing an built-in. :(
-    """
-    @property
-    def uid(self):
-        """
-        I'm only giving it a .uid property that gives back a unique but
-        reliable hash ID
-        """
-        return hash_dict(self)
 
 class Config(object):
     # For reading from a filesystem - is there any sane way to do this ?
@@ -95,11 +83,10 @@ class Config(object):
 
         if to_json:
             for config in [self.configs[x] for x in self.configs]:
-                config = UIDDict(config)
-                config["targets"] = [x.to_json() for x in config["targets"]]
-                config.pop("uid", None)
-                config["uid"] = config.uid
-                configs.append(config)
+                config_dict = dict(config)
+                config_dict["targets"] = [x.to_json() for x in config["targets"]]
+                config_dict["uid"] = config.uid
+                configs.append(config_dict)
         else:
             configs = [self.configs[x] for x in self.configs]
 

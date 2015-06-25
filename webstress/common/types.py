@@ -4,6 +4,7 @@ from webstress.util.helpers import hash_dict
 
 import urlparse
 import urllib
+import uuid
 
 class Target(object):
     def __init__(self, owner, target):
@@ -99,3 +100,17 @@ class Response(object):
         self.delegate = delegate
         self.result = result
 
+class UIDDict(dict):
+    """
+    Subclassing a built-in. :(
+    """
+    @property
+    def uid(self):
+        """
+        I get branded with a random ID once
+        """
+        self._uid = getattr(self, "_uid", unicode(uuid.uuid4().hex))
+        return self._uid
+
+class TestStopped(object):
+    pass

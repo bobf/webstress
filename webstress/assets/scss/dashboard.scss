@@ -46,7 +46,7 @@ body {
         display: inline;
       }
 
-      button.run-button {
+      button.run-button, button.stop-button {
         margin: 10px 5px;
         padding: 2px 5px;
         font-size: 14px;
@@ -154,6 +154,11 @@ body {
         &.inactive {
           background-color: $grey;
           color: $black;
+        }
+
+        &.stopped {
+          background-color: $red;
+          color: $white;
         }
       }
 

@@ -21,8 +21,9 @@ class TestAPI(twisted.trial.unittest.TestCase):
             fired['fired'] = True
             self.assertTrue(isinstance(results, list))
 
-        results = yield webstress.client.api.run(
-            self.configs, batch_callback=batch_callback)
+        config = webstress.configuration.configs["test"]
+        stats = yield webstress.client.api.launch_test(
+            config, config["targets"], batch_callback=batch_callback)
 
         self.assertTrue(fired['fired'])
 
@@ -32,8 +33,9 @@ class TestAPI(twisted.trial.unittest.TestCase):
         def batch_callback(results, stats):
             all_results.extend(results)
 
-        stats = yield webstress.client.api.run(
-            self.configs, batch_callback=batch_callback)
+        config = webstress.configuration.configs["test"]
+        stats = yield webstress.client.api.launch_test(
+            config, config["targets"], batch_callback=batch_callback)
 
         self.assertEquals(len(all_results), 20)
         # Confirm fake-generated data is stored against individual result
@@ -63,8 +65,8 @@ class TestAPI(twisted.trial.unittest.TestCase):
 
     @inlineCallbacks
     def test_statistics(self):
-        stats = yield webstress.client.api.run(
-            self.configs, batch_callback=self.noop)
+        config = webstress.configuration.configs["test"]
+        stats = yield webstress.client.api.launch_test(config, config["targets"])
 
         # Not really sure what useful tests we can run on this. Let's just make
         # sure they exist and have at least some amount of coherence

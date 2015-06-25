@@ -10,6 +10,9 @@ def appendable(key, value):
 def _hash_dict(d):
     hashable = []
     for key, value in sorted(d.items()):
+        if key == 'uid':
+            # If we hash based on the stored UID then we never get anywhere
+            continue
         hashable.append(str(appendable(key, value)))
 
     return ''.join(hashable)

@@ -7,6 +7,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
     WS.PENDING = 2;
     WS.WAITING = 3;
     WS.INACTIVE = 4;
+    WS.STOPPED = 5;
     WS.targets = {};
     WS.active_tests = {};
     WS._count = 0;
@@ -179,6 +180,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
             series: [{
                 type: 'areaspline',
                 name: 'Response time',
+                enableMouseTracking: false,
                 data: [{marker: {enabled: false}}],
                 zIndex: 2
             }],
@@ -215,6 +217,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
         },
         function configs(self, argument) {
             WS.config_grid.setState({data: argument});
+        },
+        function stopped_test(self, args, kwargs) {
+            var uid = kwargs.uid;
+            if (WS.active_tests[uid]) {
+                WS.active_tests[uid].config.setState({state: WS.STOPPED});
+            }
         }
     );
 

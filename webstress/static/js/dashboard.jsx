@@ -24,7 +24,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         return (<Target data={target} />);
                     }),
                     response_codes,
-                    state, tps, duration_stats, run_time_stats;
+                    state, tps, duration_stats, run_time_stats, run_or_stop;
                 WS.targets[data.name] = {};
 
                 response_codes = (
@@ -43,6 +43,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         break;
                     case WS.INACTIVE:
                         state = (<span className="state inactive">Inactive</span>);
+                        break;
+                    case WS.STOPPED:
+                        state = (<span className="state stopped">Stopped</span>);
                         break;
                 }
 
@@ -74,7 +77,15 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     duration_stats = '';
                     run_time_stats = '';
                 }
-
+                if (!this.is_running()) {
+                    run_or_stop = (
+                        <button className="run-button nowrap" onClick={this.run_test}>Run Test</button>
+                    );
+                } else {
+                    run_or_stop = (
+                        <button className="stop-button nowrap" onClick={this.stop_test}>Stop Test</button>
+                    );
+                }
                 return (
                     <div className="config grid-item">
                       <table className="test-info">
@@ -82,8 +93,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       <tr>
                         <td><h1 className="config-name">{data.name}</h1></td>
                         <td><div>{state}</div></td>
-                        <td><button className="run-button nowrap"
-                                 onClick={this.run_test}>Run Test</button></td>
+                        <td>{run_or_stop}</td>
                         <td>{tps}</td>
                         <td>{run_time_stats}</td>
                       </tr>
@@ -104,6 +114,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       </div>
                     </div>
                 );
+            },
+            is_running: function () {
+                return _([WS.PENDING, WS.WAITING]).contains(this.state.state);
             },
             componentDidMount: function () {
                 this.reset();
@@ -138,6 +151,12 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 } else {
                     return [];
                 }
+            },
+            stop_test: function () {
+                WS.call_remote("stop_test",
+                               {kwargs:
+                                       {uid: this.props.data.uid}
+                });
             },
             run_test: function () {
                 var data = this.props.data,
