@@ -58,7 +58,7 @@ class TestAPI(twisted.trial.unittest.TestCase):
         results = yield webstress.client.api.launch_test(config, targets)
 
         self.assertTrue(
-            (datetime.datetime.now() - start).total_seconds() >= 0.5
+            (datetime.datetime.now() - start).total_seconds() >= 2
         )
 
     @inlineCallbacks

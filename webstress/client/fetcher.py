@@ -51,7 +51,7 @@ class Client(HTTPClient):
         if self._each_callback is not None:
             self._each_callback(result)
 
-        self._deferred.callback(result)
+        self._deferred.callback(None)
 
 class Worker(object):
     """
@@ -97,6 +97,7 @@ class Fetcher(object):
         self._batcher = None
         self._active_jobs = weakref.WeakSet()
         self._queue = defer.DeferredQueue()
+        self.stats = None
 
     def add_targets(self, targets):
         """
@@ -126,7 +127,7 @@ class Fetcher(object):
 
         d.addCallback(self.compile_results)
 
-        d.addBoth(self.cleanup)
+        d.addCallbacks(self.cleanup, self.fail)
 
         self.create_workers(max_active_jobs)
         for worker in self.workers:
@@ -143,7 +144,7 @@ class Fetcher(object):
         if self._tps is None:
             return 0
         else:
-            return (1.0 / self._tps) / len(self.workers)
+            return (1.0 / self._tps) * len(self.workers)
 
     @property
     def test_run_time(self):
@@ -236,7 +237,7 @@ class Fetcher(object):
 
             def cb(result):
                 response_d.callback(result)
-                return result
+                return None
             d.addCallback(cb)
             return d
 
@@ -256,7 +257,9 @@ class Fetcher(object):
 
             return d
 
-        def errback(_response, url):
+        def errback(failure, url):
+            # Trap specific failures here ?
+            log.msg(failure)
             target.success = False
 
             end = datetime.now()
@@ -267,6 +270,7 @@ class Fetcher(object):
                 end_time=end,
                 url=url,
                 status_code=target.status_code)
+
             return result
 
         return callback, errback
@@ -275,24 +279,47 @@ class Fetcher(object):
         self._deque.appendleft(result)
 
     def batch_results(self):
+        """
+        Called periodically to pick up any results returned and yield
+        statistics on them to `batch_callback`
+
+        This is nicer than sending stats per-result which could potentially
+        cause huge amounts of traffic
+        """
         results = list(self._deque)
 
         if results:
+            # Get the tip of the results as this will have the most up-to-date
+            # stats
+            result = max(
+                results,
+                key=(lambda x: x.stats['__all__']['__all__']['count']))
+            self.stats = result.stats
+
             try:
                 if self.batch_callback is not None:
-                    result = max(
-                        results,
-                        key=(lambda x: x.stats['__all__']['__all__']['count']))
                     result.stats['__all__']['__all__']['start_time'] = self.test_start_time
                     result.stats['__all__']['__all__']['run_time'] = self.test_run_time
                     return self.batch_callback(results, result.stats)
             finally:
                 self._deque.clear()
 
-    def compile_results(self, results):
-        return max(results, key=lambda x: x.stats['__all__']['__all__']['count']).stats
+    def compile_results(self, result):
+        """
+        Generate the ultimate result from `results()`
+        """
+        # Make sure we at least batch once to ensure we yield the most recent
+        # statistics. Otherwise some unprocessed results could still be in
+        # the queue.
+        self.batch_results()
+        return self.stats
 
-    def cleanup(self, results):
+    def fail(self, failure):
+        log.msg("Test aborted, cleaning up: %s" % (failure,))
+        self.cleanup(None)
+        return failure
+
+    def cleanup(self, result):
         # Make sure we at least send one batch before we stop
         self.batch_results()
         if self._batcher is not None:
@@ -302,7 +329,7 @@ class Fetcher(object):
             # Ask all workers to die
             self._queue.put(None)
 
-        return results
+        return result
 
     def cancel(self, failure):
         """
