@@ -61,21 +61,20 @@ def calculate_tps(timespans, durations, max_points=20):
 
     tps = []
 
-    timespans.sort(key=to_nearest_second)
-
     groups = itertools.groupby(timespans, to_nearest_second)
     for key, timespan_group in groups:
         requests = list(timespan_group)
-        tps.append((key * 1000, len(requests)))
+        tps.append((normalise_datetime(requests[0][1]), len(requests)))
 
     end = max( timespans, key=lambda x: x[1] )[1]
-    start = min( timespans, key=lambda x: x[0] )[0]
+    start = min( timespans, key=lambda x: x[1] )[1]
 
     avg = len(timespans) / (end - start).total_seconds()
 
     points = []
     for chunk in grouper((len(tps) / max_points) or 1, tps):
-        points.append(( chunk[-1][0], mean([x[1] for x in chunk]) ))
+        points.append(( chunk[0][0], mean([x[1] for x in chunk]) ))
+
     return {'values': points, 'mean': avg}
 
 def chart_points(timespans, durations, num_points=100):
@@ -84,6 +83,8 @@ def chart_points(timespans, durations, num_points=100):
     response time over time. Generate no more than `num_points` points - take
     peak time over `num_points` periods in time if input is > `num-points`
     """
+    timespans.sort(key=operator.itemgetter(1))
+
     earliest = normalise_datetime(
         min(timespans, key=operator.itemgetter(1))[1])
     latest = normalise_datetime(
@@ -111,7 +112,6 @@ def chart_points(timespans, durations, num_points=100):
     chunk = []
     points = []
 
-    timespans.sort(key=operator.itemgetter(1))
     timespans = iter((normalise_datetime(s), normalise_datetime(e))
                       for s, e in timespans)
 
