@@ -202,16 +202,21 @@ class Fetcher(object):
             ).setdefault(category, []
             ).append((result.start_time, result.end_time))
 
-        result.stats = {}
+    def _calculate_statistics(self):
+        statistics = {}
         for target in self.timings:
-            result.stats.setdefault(target, {})
+            statistics.setdefault(target, {})
             all_time_spans = []
             for key in self.timings[target]:
                 time_spans = self.timings[target][key]
-                result.stats[target][key] = stats.generate(time_spans)
+                statistics[target][key] = stats.generate(time_spans)
                 all_time_spans.extend(time_spans)
 
-            result.stats[target]["__all__"] = stats.generate(all_time_spans)
+            statistics[target]["__all__"] = stats.generate(all_time_spans)
+
+        statistics['__all__']['__all__']['start_time'] = self.test_start_time
+        statistics['__all__']['__all__']['run_time'] = self.test_run_time
+        return statistics
 
     def set_tps_delay(self, delay=None):
         if delay is None:
@@ -298,7 +303,7 @@ class Fetcher(object):
                 end_time=end,
                 url=url,
                 status_code=target.status_code)
-
+            self.update_stats('Failure', result)
             return result
 
         return callback, errback
@@ -319,16 +324,10 @@ class Fetcher(object):
         if results:
             # Get the tip of the results as this will have the most up-to-date
             # stats
-            result = max(
-                results,
-                key=(lambda x: x.stats['__all__']['__all__']['count']))
-            self.stats = result.stats
-
+            self.stats = self._calculate_statistics()
             try:
                 if self.batch_callback is not None:
-                    result.stats['__all__']['__all__']['start_time'] = self.test_start_time
-                    result.stats['__all__']['__all__']['run_time'] = self.test_run_time
-                    return self.batch_callback(results, result.stats)
+                    return self.batch_callback(results, self.stats)
             finally:
                 self._deque.clear()
 
@@ -340,10 +339,7 @@ class Fetcher(object):
         # statistics. Otherwise some unprocessed results could still be in
         # the queue.
         self.batch_results()
-        if result is TestPolitelyStopped:
-            return result
-        else:
-            return self.stats
+        return self.stats
 
     @defer.inlineCallbacks
     def cleanup(self, result):
