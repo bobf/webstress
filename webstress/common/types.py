@@ -112,5 +112,7 @@ class UIDDict(dict):
         self._uid = getattr(self, "_uid", unicode(uuid.uuid4().hex))
         return self._uid
 
-class TestStopped(object):
-    pass
+class TestPolitelyStopped(Exception):
+    """
+    Used to notify that a test was asked to stop and it had no problems
+    """

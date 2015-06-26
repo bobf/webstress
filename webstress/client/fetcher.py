@@ -13,8 +13,8 @@ from twisted.web.http import HTTPClient
 from twisted.internet import defer
 from twisted.python import log
 
-from webstress.common.types import Result, TestStopped
-from webstress.util import stats
+from webstress.common.types import Result, TestPolitelyStopped
+from webstress.util import stats, helpers
 
 class Client(HTTPClient):
     def __init__(self, deferred, target, url, stats_callback, each_callback=None):
@@ -118,6 +118,7 @@ class Fetcher(object):
         self._active_jobs = weakref.WeakSet()
         self._queue = defer.DeferredQueue()
         self.stats = None
+        self.cancelled = False
 
     def add_targets(self, targets):
         """
@@ -143,7 +144,9 @@ class Fetcher(object):
 
         self._gatherer_deferred = d
 
-        d.addErrback(self.cancel)
+        d.addErrback(self._polite_stoppage)
+
+        d.addErrback(self._errback)
 
         # Send results to clients in batches every one second
         self._batcher = task.LoopingCall(self.batch_results)
@@ -151,7 +154,7 @@ class Fetcher(object):
 
         d.addCallback(self.compile_results)
 
-        d.addCallbacks(self.cleanup, self.fail)
+        d.addCallback(self.cleanup)
 
         self.create_workers(config['max_active_jobs'])
         for worker in self.workers:
@@ -337,15 +340,10 @@ class Fetcher(object):
         # statistics. Otherwise some unprocessed results could still be in
         # the queue.
         self.batch_results()
-        if result is TestStopped:
+        if result is TestPolitelyStopped:
             return result
         else:
             return self.stats
-
-    def fail(self, failure):
-        log.msg("Test aborted, cleaning up: %s" % (failure,))
-        self.cleanup(None)
-        return failure
 
     @defer.inlineCallbacks
     def cleanup(self, result):
@@ -367,22 +365,28 @@ class Fetcher(object):
 
         defer.returnValue(result)
 
+    @defer.inlineCallbacks
     def stop(self):
         """
         I was politely asked to stop
         """
-        self.cancel(TestStopped)
-        self._gatherer_deferred.callback([])
+        self.stopping = True
+        # Make sure I clean up cleanly before I announce my death
+        just_chilling = yield self.cleanup(None)
+        self._gatherer_deferred.errback(TestPolitelyStopped())
 
-    def cancel(self, failure=None):
+    @helpers.traps(TestPolitelyStopped)
+    def _polite_stoppage(self, failure):
+        log.msg("Test stopped successfully, at user's request")
+        return failure
+
+    def _errback(self, failure=None):
         """
         I got told to stop or an error happened; attempt to clean up
         """
         self.cancelled = True
         self.cleanup(None)
         self._failure = failure
-        if failure is TestStopped:
-            log.msg('Stopping test cleanly: test stopped by user')
-        else:
+        if failure.type is not TestPolitelyStopped:
             log.msg('Stopping test abnormally: %s' % (failure,))
-            return failure
+        return failure

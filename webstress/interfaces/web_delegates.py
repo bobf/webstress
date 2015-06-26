@@ -2,6 +2,8 @@ import weakref
 
 import webstress.client.api
 import webstress.config.parser
+from webstress.common.types import TestPolitelyStopped
+from webstress.util import helpers
 
 from twisted.python import log
 
@@ -64,7 +66,6 @@ class StressTestDelegate(Delegate):
     @expose
     def stop_test(self, uid=None):
         webstress.client.api.stop_test(uid)
-        self._transport.send("stopped_test", **{u"uid": uid})
 
     def make_test_deferred(self, targets, uid):
         def batch_callback(results, stats):
@@ -75,11 +76,23 @@ class StressTestDelegate(Delegate):
             self._transport.send("all_results", **{u"uid": uid})
             return {u"uid": uid}
 
+        @helpers.traps(TestPolitelyStopped)
+        def errback(failure):
+            """
+            I fire when a test is cleanly and fully stopped by a user
+            """
+
+            action = "stopped_test"
+            kwargs = {u"uid": uid}
+            self._transport.send("stopped_test", **kwargs)
+            return {u"action": action, u"kwargs": uid}
+
         config = webstress.configuration.configs[targets[0].owner]
 
         d = webstress.client.api.launch_test(
             config, targets,
             batch_callback=batch_callback)
         d.addCallback(all_callback)
+        d.addErrback(errback)
 
         return d

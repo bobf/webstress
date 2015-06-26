@@ -81,4 +81,10 @@ class TestWebDelegates(twisted.trial.unittest.TestCase):
         responses = yield gatherResults(self.transport.build_and_execute_responses(json))
         test_results = yield test_d
 
+        result = test_results[0].result
+
+        self.assertTrue(result['action'] == 'stopped_test')
+        self.assertTrue(result['kwargs'] == 9999)
+
+        # I don't know how else to be 100% sure that a test has stopped
         self.assertTrue(webstress.configuration.configs['test_config']._fetcher.cancelled)
