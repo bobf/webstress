@@ -2,7 +2,7 @@
 # https://divmod.readthedocs.org/en/latest/products/nevow/athena/index.html
 import json
 
-from twisted.internet.defer import maybeDeferred, DeferredList
+from twisted.internet.defer import maybeDeferred, DeferredList, gatherResults
 from twisted.python import log
 
 from nevow import athena, loaders, static, tags as T
@@ -48,7 +48,7 @@ class Transport(athena.LiveElement):
         dl = []
         for transport in self._all_transports:
             if transport.page is not None:
-                dl.append(transport.callRemote(method, args, kwargs))
+                dl.append(self.callRemote(method, args, kwargs))
             else:
                 to_remove.append(transport)
 
@@ -56,7 +56,7 @@ class Transport(athena.LiveElement):
             # Remove stale transports
             self._all_transports.remove(transport)
 
-        return DeferredList(dl)
+        return gatherResults(dl)
 
     @athena.expose
     def receive(self, argument):

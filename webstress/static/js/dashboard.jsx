@@ -16,7 +16,19 @@ if (typeof window.WS === 'undefined') window.WS = {};
         }),
         Config = React.createClass({
             getInitialState: function () {
-                return {state: WS.INACTIVE, stats: {__all__: null}};
+                return {
+                        state: WS.INACTIVE,
+                        stats: {
+                            response_times: [
+                                {name: '__all__', results: []}]
+                        }
+                };
+            },
+            get_my_stats: function () {
+                var data = _(
+                    this.state.stats.response_times
+                    ).where({name: "__all__"});
+                return data.length ? data[0].results : null;
             },
             render: function () {
                 var data = this.props.data,
@@ -24,11 +36,13 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         return (<Target data={target} />);
                     }),
                     response_codes,
-                    state, tps, duration_stats, run_time_stats, run_or_stop;
+                    state, tps, duration_stats, run_time_stats, run_or_stop,
+                    my_stats = this.get_my_stats();
                 WS.targets[data.name] = {};
 
+
                 response_codes = (
-                    <ResponseCodes data={this.state.stats.__all__} />
+                    <ResponseCodes data={my_stats} />
                 );
 
                 switch (this.state.state) {
@@ -55,23 +69,23 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     tps = '';
                 }
 
-                if (this.state.stats.__all__) {
+                if (my_stats.length) {
                     run_time_stats = (
                         <div>
                           <table className="run-times">
                             <tbody>
                               <tr>
-                                <td className="start-time nowrap">{this.state.stats.__all__.__all__.start_time}</td>
+                                <td className="start-time nowrap">{this.state.stats.start_time}</td>
                               </tr>
                               <tr>
-                                <td className="run-time nowrap">Run time: {this.state.stats.__all__.__all__.run_time}</td>
+                                <td className="run-time nowrap">Run time: {this.state.stats.run_time}</td>
                               </tr>
                             </tbody>
                           </table>
                         </div>
                     );
                     duration_stats = (
-                        <DurationStats data={this.state.stats.__all__} />
+                        <DurationStats data={my_stats} />
                         );
                 } else {
                     duration_stats = '';
@@ -125,11 +139,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
             componentDidUpdate: function (props, state) {
                 var name = this.props.data.name,
                     targets = WS.targets[name],
+                    i,
                     key;
-                for (key in targets) {
-                    if (!targets.hasOwnProperty(key)) continue;
-
-                    targets[key].setState({stats: this.state.stats[key]});
+                for (i = 0; i < this.state.stats.response_times.length; i ++) {
+                    target_stats = this.state.stats.response_times[i];
+                    if (target_stats.name !== '__all__') {
+                        targets[target_stats.name].setState(
+                            {stats: target_stats.results});
+                    }
                 }
                 $content.do_layout();
             },
@@ -145,11 +162,35 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $(this.refs.targets.getDOMNode()).toggle("fast");
                 $(this.refs.targets_link.getDOMNode()).toggleClass("active");
             },
+            success_stats: function () {
+                if (!this.state.stats.response_times) {
+                    return null;
+                }
+                var data = _(
+                    this.state.stats.response_times
+                    ).where({name: "__all__"}),
+
+                    stats = _(data[0].results).where({code: "200"});
+                return stats.length ? stats[0] : null;
+
+            },
             get_points: function () {
-                if (this.state.stats && this.state.stats.__all__ && this.state.stats.__all__["200"]) {
-                    return this.state.stats.__all__["200"].chart_points;
+                var stats = this.success_stats();
+                if (stats) {
+                    return {
+                        type: stats.chart_x_axis_type,
+                        title: stats.chart_x_axis_title,
+                        values: _(stats.response_time_points).map(
+                                function (x) {
+                                    return [x.x, x.y];
+                            }),
+                        tps_values: _(stats.tps_points).map(
+                                function (x) {
+                                    return [x.x, x.y];
+                            }),
+                    }
                 } else {
-                    return [];
+                    return {};
                 }
             },
             stop_test: function () {
@@ -283,9 +324,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
                 data = this.props.data;
 
-                for (code in data) {
-                    if (!data.hasOwnProperty(code)) continue;
-                    results.push([code, data[code].count]);
+                for (i = 0; i < data.length; i ++) {
+                    results.push([data[i].code, data[i].count]);
                 }
                 results.sort();
                 for (i = 0; i < results.length; i ++) {
@@ -318,42 +358,37 @@ if (typeof window.WS === 'undefined') window.WS = {};
         DurationStats = React.createClass({
             render: function () {
                 var data = this.props.data,
-                    keys = _.chain(data).keys().without('__all__').value(),
                     that = this,
+                    histogram_data = this.histogram_data(),
                     rows, histogram;
-                if (_.isEmpty(data)) {
-                    return "";
-                }
 
-                keys.sort();
-                rows = _.map(keys, function (key) {
-                    var peak = data[key].peak,
-                        nadir = data[key].nadir,
-                        mean = data[key].mean,
-                        median = data[key].median,
-                        percentiles = data[key].percentiles,
-                        std_deviation = data[key].std_deviation,
-                        mean_tps;
-                    if (data[key].chart_points) {
-                        mean_tps = data[key].chart_points.tps.mean;
-                    } else {
-                        mean_tps = null;
+                rows = _(data).map(function (item) {
+                    var code = item.code,
+                        peak = item.peak,
+                        nadir = item.nadir,
+                        mean = item.mean,
+                        median = item.median,
+                        percentiles = item.percentiles,
+                        std_deviation = item.std_deviation,
+                        tps_mean = item.tps_mean;
+                    if (code == '__all__') {
+                        return '';
                     }
                     return (
                         <tr>
-                          <td className={WS.util.status_code_class(key)}>{key}</td>
+                          <td className={WS.util.status_code_class(code)}>{code}</td>
                           <td className={WS.util.severity(peak)}>{WS.util.format(peak, 2)}</td>
                           <td className={WS.util.severity(nadir)}>{WS.util.format(nadir, 2)}</td>
                           <td className={WS.util.severity(mean)}>{WS.util.format(mean, 2)}</td>
                           <td className={WS.util.severity(median)}>{WS.util.format(median, 2)}</td>
-                          <td>{WS.util.format(mean_tps, 2)}</td>
+                          <td>{WS.util.format(tps_mean, 2)}</td>
                         </tr>
                     );
                 }, this);
 
-                if (data["200"]) {
+                if (histogram_data) {
                     histogram = (
-                        <Histogram data={data["200"].histogram} />
+                        <Histogram data={histogram_data} />
                     );
                 } else {
                     histogram = '';
@@ -376,6 +411,17 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     {histogram}
                     </div>
                 );
+            },
+            histogram_data: function () {
+                var data = _(
+                    this.props.data
+                    ).where({code: "200"});
+                if (data.length) {
+                    return {values: data[0].histogram_values,
+                            edges: data[0].histogram_edges};
+                } else {
+                    return null;
+                }
             }
         }),
         Histogram = React.createClass({
@@ -391,7 +437,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                             </th>
                         );
                     }, this),
-                    row = _.map(data.histogram, function (value) {
+                    row = _.map(data.values, function (value) {
                         return (
                             <td>{value}</td>
                         );

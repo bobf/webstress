@@ -23,5 +23,6 @@ setup(name='WebStress',
         'nevow==0.11.1',
         'mock==1.0.1',
         'numpy==1.9.2',
+        'ampoule==0.2',
        ],
      )

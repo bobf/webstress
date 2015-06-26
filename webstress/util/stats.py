@@ -1,5 +1,11 @@
 from __future__ import unicode_literals
 
+from twisted.protocols.amp import AmpBox, String, Integer, Float, DateTime
+
+from webstress.util import helpers
+from webstress.util.helpers import normalise_datetime
+
+import sys
 import datetime
 import operator
 import math
@@ -26,19 +32,8 @@ def std_deviation(L):
     return numpy.std(L)
 
 def histogram(L):
-    histogram, edges = numpy.histogram(L, 5)
-    return {"histogram": list(histogram), "edges": list(edges)}
-
-def normalise_datetime(dt, milliseconds=True):
-    """
-    Return milliseconds since epoch for a given datetime
-    """
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    x = (dt - epoch).total_seconds()
-    if milliseconds:
-        return x * 1000
-    else:
-        return x
+    values, edges = numpy.histogram(L, 5)
+    return list(values), list(edges)
 
 # Borrowed from http://stackoverflow.com/a/8991553
 def grouper(n, iterable):
@@ -73,9 +68,11 @@ def calculate_tps(timespans, durations, max_points=20):
 
     points = []
     for chunk in grouper((len(tps) / max_points) or 1, tps):
-        points.append(( chunk[0][0], mean([x[1] for x in chunk]) ))
+        plot_x = chunk[0][0]
+        plot_y = mean([x[1] for x in chunk])
+        points.append({'x': plot_x, 'y': plot_y})
 
-    return {'values': points, 'mean': avg}
+    return {'points': points, 'mean': avg}
 
 def chart_points(timespans, durations, num_points=100):
     """
@@ -92,9 +89,9 @@ def chart_points(timespans, durations, num_points=100):
 
     if latest - earliest < 1:
         # All responses returned in < 1 second, show number of requests instead
-        return {'type': 'linear',
-                'title': 'Requests',
-                'values': chart_points_linear(
+        return {'x_axis_type': 'linear',
+                'x_axis_title': 'Requests',
+                'points': chart_points_linear(
                             durations,
                             num_points=num_points),
                 'tps': {}
@@ -125,11 +122,11 @@ def chart_points(timespans, durations, num_points=100):
             except StopIteration:
                 break
         if chunk:
-            points.append((upper_limit, peak(chunk) / 1000))
+            points.append({'x': upper_limit, 'y': peak(chunk) / 1000})
 
-    return {'type': 'datetime',
-            'title': 'Time',
-            'values': points,
+    return {'x_axis_type': 'datetime',
+            'x_axis_title': 'Time',
+            'points': points,
             'tps': tps}
 
 def chart_points_linear(L, num_points=100):
@@ -152,7 +149,7 @@ def chart_points_linear(L, num_points=100):
         chunks.append(L[i + chunk_size:])
 
     for i, chunk in enumerate(chunks):
-        points.append([i * chunk_size, peak(chunk)])
+        points.append({'x': i * chunk_size, 'y': peak(chunk)})
 
     return points
 
@@ -164,13 +161,25 @@ def generate(timespans):
     durations = [(end - start).total_seconds()
                  for start, end in timespans]
 
+    histogram_values, histogram_edges = histogram(durations)
+
+    chart = chart_points(timespans, durations)
+
+    tps_mean = chart['tps'].get('mean')
+    tps_points = chart['tps'].get('points')
+
     return {"nadir": nadir(durations),
             "peak": peak(durations),
             "median": median(durations),
             "mean": mean(durations),
             "percentiles": percentiles(durations),
             "std_deviation": std_deviation(durations),
-            "histogram": histogram(durations),
-            "chart_points": chart_points(timespans, durations),
+            "histogram_edges": histogram_edges,
+            "histogram_values": histogram_values,
             "count": len(durations),
+            "tps_mean": tps_mean,
+            "tps_points": tps_points,
+            "chart_x_axis_type": chart["x_axis_type"],
+            "chart_x_axis_title": chart["x_axis_title"],
+            "response_time_points": chart["points"],
     }

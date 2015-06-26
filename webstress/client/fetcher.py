@@ -14,7 +14,7 @@ from twisted.internet import defer
 from twisted.python import log
 
 from webstress.common.types import Result, TestPolitelyStopped
-from webstress.util import stats, helpers
+from webstress.util import stats, helpers, ipc
 
 class Client(HTTPClient):
     def __init__(self, deferred, target, url, stats_callback, each_callback=None):
@@ -120,6 +120,8 @@ class Fetcher(object):
         self.cancelled = False
         self._delay = None
 
+        self.statistician = ipc.Statistician()
+
     def add_targets(self, targets):
         """
         Add targets to test
@@ -134,6 +136,7 @@ class Fetcher(object):
         """
         This is where everything is initiated and gathered when running a test
         """
+        self._config = config
         config._fetcher = self
 
         self._test_start_time = datetime.now()
@@ -183,29 +186,27 @@ class Fetcher(object):
         Calculate statistics for each individual target and each individual
         category, i.e. 200 OK, Failure
         """
-        self.timings.setdefault(result.target.name, {}
-            ).setdefault(category, []
-            ).append((result.start_time, result.end_time))
+        self.statistician.update({
+            'uid': self._config.uid,
+            'category': category,
+            'target': result.target.name,
+            'start_time': result.start_time,
+            'end_time': result.end_time
+        })
 
-        self.timings.setdefault('__all__', {}
-            ).setdefault(category, []
-            ).append((result.start_time, result.end_time))
-
+    @defer.inlineCallbacks
     def _calculate_statistics(self):
-        statistics = {}
-        for target in self.timings:
-            statistics.setdefault(target, {})
-            all_time_spans = []
-            for key in self.timings[target]:
-                time_spans = self.timings[target][key]
-                statistics[target][key] = stats.generate(time_spans)
-                all_time_spans.extend(time_spans)
+        """
+        Defer to my statistics calculation process to build stats without
+        blocking reactor
+        """
+        statistics = yield self.statistician.calculate({"uid": self._config.uid})
 
-            statistics[target]["__all__"] = stats.generate(all_time_spans)
+        if statistics is not None:
+            statistics['start_time'] = self.test_start_time
+            statistics['run_time'] = self.test_run_time
 
-        statistics['__all__']['__all__']['start_time'] = self.test_start_time
-        statistics['__all__']['__all__']['run_time'] = self.test_run_time
-        return statistics
+        defer.returnValue(helpers.athena_safe(statistics))
 
     @property
     def initial_tps_delay(self):
@@ -226,14 +227,30 @@ class Fetcher(object):
         delay = self._delay
         if delay is None:
             delay = self.initial_tps_delay
-        if self.stats is not None:
-            mean_tps = self.stats['__all__']['__all__']['chart_points']['tps']['mean']
+        all_stats = self._get_all_stats()
+        if all_stats is not None:
+            mean_tps = all_stats['tps_mean']
             if mean_tps < self._tps:
                 delay -= 0.01
             elif mean_tps > self._tps:
                 delay += 0.01
         self._delay = max(delay, 0)
         return self._delay
+
+    def _get_all_stats(self):
+        """
+        We generate statistics broken down by target and status code
+        hierarchically. This method provides a convenient way to get the total
+        statistics for all targets and all outcomes.
+        """
+        if self.stats is None:
+            return None
+        else:
+            for data in self.stats['response_times']:
+                if data['name'] == '__all__':
+                    for result in data['results']:
+                        if result['code'] == '__all__':
+                            return result
 
     def create_workers(self, n):
         """
@@ -320,6 +337,7 @@ class Fetcher(object):
     def each_callback(self, result):
         self._deque.appendleft(result)
 
+    @defer.inlineCallbacks
     def batch_results(self):
         """
         Called periodically to pick up any results returned and yield
@@ -333,13 +351,14 @@ class Fetcher(object):
         if results:
             # Get the tip of the results as this will have the most up-to-date
             # stats
-            self.stats = self._calculate_statistics()
+            self.stats = yield self._calculate_statistics()
             try:
                 if self.batch_callback is not None:
-                    return self.batch_callback(results, self.stats)
+                    yield self.batch_callback(results, self.stats)
             finally:
                 self._deque.clear()
 
+    @defer.inlineCallbacks
     def compile_results(self, result):
         """
         Generate the ultimate result from `results()`
@@ -347,8 +366,8 @@ class Fetcher(object):
         # Make sure we at least batch once to ensure we yield the most recent
         # statistics. Otherwise some unprocessed results could still be in
         # the queue.
-        self.batch_results()
-        return self.stats
+        yield self.batch_results()
+        defer.returnValue(self.stats)
 
     @defer.inlineCallbacks
     def cleanup(self, result):
