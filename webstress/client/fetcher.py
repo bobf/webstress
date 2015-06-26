@@ -148,9 +148,9 @@ class Fetcher(object):
 
         d.addErrback(self._errback)
 
-        # Send results to clients in batches every one second
+        # Send results to clients in batches every two seconds
         self._batcher = task.LoopingCall(self.batch_results)
-        self._batcher_d = self._batcher.start(1)
+        self._batcher_d = self._batcher.start(2)
 
         d.addCallback(self.compile_results)
 

@@ -70,10 +70,10 @@ class StressTestDelegate(Delegate):
     def make_test_deferred(self, targets, uid):
         def batch_callback(results, stats):
             response = {u"stats": stats, u"uid": uid}
-            self._transport.send_to_all("results", **response)
-            return response
+            return self._transport.send_to_all("results", **response)
+
         def all_callback(results):
-            self._transport.send("all_results", **{u"uid": uid})
+            self._transport.send_to_all("all_results", **{u"uid": uid})
             return {u"uid": uid}
 
         @helpers.traps(TestPolitelyStopped)
@@ -84,7 +84,7 @@ class StressTestDelegate(Delegate):
 
             action = "stopped_test"
             kwargs = {u"uid": uid}
-            self._transport.send("stopped_test", **kwargs)
+            self._transport.send_to_all("stopped_test", **kwargs)
             return {u"action": action, u"kwargs": uid}
 
         config = webstress.configuration.configs[targets[0].owner]
