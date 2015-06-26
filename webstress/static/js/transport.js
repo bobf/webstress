@@ -152,7 +152,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 }
             },
             title: {
-                text: 'Peak [successful] response times'
+                text: 'Successful Responses'
             },
             yAxis: {
                 title: {
