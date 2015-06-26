@@ -13,7 +13,7 @@ class Target(object):
         self.owner = owner
         self.success = None
         self.status_code = None
-        self.params = [Param(x) for x in target.get("params", [])]
+        self.params = [Param(x, self) for x in target.get("params", [])]
         self.hits = target["hits"]
         self.name = target.get("name")
         self.base_url = target["base_url"]
@@ -32,13 +32,13 @@ class Target(object):
             return url
 
     def _to_dict(self):
-        attribs = ["owner",
-                   "hits", "name", "base_url"]
+        attribs = ["hits", "name", "base_url"]
         obj = dict(
             (x, getattr(self, x))
             for x in attribs)
 
         obj["params"] = [x.to_json() for x in self.params]
+        obj["owner"] = self.owner["name"]
 
         return obj
 
@@ -48,9 +48,10 @@ class Target(object):
         return d
 
 class Param(object):
-    def __init__(self, param):
+    def __init__(self, param, target):
         self._param = param
         self.key = param["key"]
+        self.target = target
 
     @property
     def value(self):
@@ -59,10 +60,15 @@ class Param(object):
     def to_json(self):
         if isinstance(self._param["value"], dict):
             if "fake" in self._param["value"]:
+                # TODO: Return an object and let the client format it
                 return {"key": self.key,
                         "value": "Fake: " + self._param["value"]["fake"]}
         else:
-            return {"key": self.key, "value": self.value}
+            if self.key.lower() in self.target.owner["filter_params"]:
+                value = "[Filtered]"
+            else:
+                value = self.value
+            return {"key": self.key, "value": value}
 
 
 class Result(object):

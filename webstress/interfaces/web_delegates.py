@@ -60,7 +60,7 @@ class StressTestDelegate(Delegate):
 
     @expose
     def list_configs(self):
-        configs = webstress.configuration.list_configs(to_json=True)
+        configs = webstress.client.api.list_configs()
         self._transport.send("configs", *configs)
 
     @expose
@@ -87,7 +87,7 @@ class StressTestDelegate(Delegate):
             self._transport.send_to_all("stopped_test", **kwargs)
             return {u"action": action, u"kwargs": uid}
 
-        config = webstress.configuration.configs[targets[0].owner]
+        config = targets[0].owner
 
         d = webstress.client.api.launch_test(
             config, targets,

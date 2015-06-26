@@ -89,3 +89,27 @@ targets:
     base_url: http://localhost:8000/
     hits: 10
 """
+
+sensitive_config = """
+targets:
+  - name: test
+    base_url: http://localhost:8000/
+    hits: 10
+    params:
+      - key: password
+        value: classified
+"""
+
+sensitive_but_exposed_config = """
+filter_params:
+  - name
+targets:
+  - name: test
+    base_url: http://localhost:8000/
+    hits: 10
+    params:
+      - key: password
+        value: exposed
+      - key: name
+        value: classified
+"""

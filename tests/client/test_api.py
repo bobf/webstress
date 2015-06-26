@@ -1,7 +1,10 @@
 from twisted.internet.defer import inlineCallbacks
 import twisted.trial.unittest
 
-from ..support.config import std_sample_config, tps_config
+from ..support.config import (std_sample_config,
+                              tps_config,
+                              sensitive_config,
+                              sensitive_but_exposed_config)
 
 import webstress.client.api
 from webstress.config.parser import Config
@@ -38,13 +41,12 @@ class TestAPI(twisted.trial.unittest.TestCase):
             config, config["targets"], batch_callback=batch_callback)
 
         self.assertEquals(len(all_results), 20)
-        # Confirm fake-generated data is stored against individual result
-        # We have to hope that we don't get four of the exact same
-        # random-generated value :)
-        self.assertTrue(all_results[0].url != all_results[1].url or
-                        all_results[1].url != all_results[2].url or
-                        all_results[2].url != all_results[3].url
-                        )
+
+        # Make sure that the same URL isn't being generated with our faked data
+        # There is a chance that all URLs will be the same by coincidence, so
+        # re-run this test if it fails - chances should be very slim !
+        self.assertTrue(len(set(x.url for x in all_results)) > 1)
+
         # Make sure .url isn't re-generated each time
         self.assertTrue(all_results[0].url == all_results[0].url)
 
@@ -73,3 +75,31 @@ class TestAPI(twisted.trial.unittest.TestCase):
         self.assertTrue(stats["test1"]["200"]["nadir"] <= stats["test1"]["200"]["peak"])
         self.assertTrue(stats["test1"]["200"]["count"] == 10)
         self.assertTrue(stats["test1"]["200"]["chart_points"]["tps"])
+
+    def test_sensitive_params_are_filtered_by_default(self):
+        configs = [{"name": "test", "body": sensitive_config}]
+        webstress.client.api.update_config(configs)
+
+        all_configs = webstress.client.api.list_configs()
+        self.assertNotEqual(
+            all_configs[0]['targets'][0]['params'][0]['value'],
+            'classified'
+        )
+
+    def test_only_specified_filter_params_are_applied(self):
+        configs = [{"name": "test", "body": sensitive_but_exposed_config}]
+        webstress.client.api.update_config(configs)
+
+        all_configs = webstress.client.api.list_configs()
+        params = all_configs[0]['targets'][0]['params']
+        self.assertEqual(
+            # Password not filtered as we specify our own filter param list
+            params[0]['value'],
+            'exposed'
+        )
+        self.assertNotEqual(
+            # Name filtered as it is specified in filter param list
+            params[1]['value'],
+            'classified'
+        )
+

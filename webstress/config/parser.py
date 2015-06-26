@@ -41,7 +41,28 @@ def callify_param_values(config):
             param = callify(param)
     return config
 
+DEFAULT_FILTER_PARAMS = [
+    "password",
+    "auth_token",
+    "authentication_token",
+    "token",
+    ]
+
 class Config(object):
+    """
+    The main configuration object which is usually found at
+    webstress.configuration
+
+    Typically this is a collection of .yaml files loaded as a list of dicts
+    passed to __init__:
+
+    [
+        {"name": "test_name_1",
+         "body": "<yaml config for test>},
+        {"name": "test_name_2",
+         "body": "<yaml config for test>},
+    ]
+    """
     # For reading from a filesystem - is there any sane way to do this ?
     encoding = 'utf8'
 
@@ -54,10 +75,16 @@ class Config(object):
             name = source["name"].decode(self.encoding)
 
             config = UIDDict()
+            config["filter_params"] = parsed.get("filter_params")
+            if config["filter_params"] is None:
+                # Only use defaults on None - allow config to specify an empty
+                # list to override defaults
+                config["filter_params"] = DEFAULT_FILTER_PARAMS
+
             config["name"] = name
             config["tps"] = parsed.get("tps")
             config["max_active_jobs"] = parsed.get("max_active_jobs")
-            config["targets"] = [Target(name, x) for x in parsed["targets"]]
+            config["targets"] = [Target(config, x) for x in parsed["targets"]]
 
             self._check_unique(config)
 

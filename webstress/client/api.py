@@ -6,6 +6,9 @@ import webstress.client.http
 def reload_config():
     raise NotImplementedError("Must be set by whichever interface is used")
 
+def list_configs():
+    return webstress.configuration.list_configs(to_json=True)
+
 def launch_test(config, targets, batch_callback=None):
     http = webstress.client.http.HTTP(webstress.configuration.encoding)
     for target in targets:
@@ -23,5 +26,13 @@ def stop_test(uid):
 
 
 def update_config(configs):
+    """
+    I get called by whichever front end loads the application.
+
+    I'm most likely called by:
+
+        twisted/plugins/webstress_webserver_plugin.py
+    """
+
     # Takes a list of dicts, each dict is one config
     webstress.configuration = webstress.config.parser.Config(configs)
