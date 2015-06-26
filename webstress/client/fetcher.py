@@ -55,21 +55,19 @@ class Client(HTTPClient):
 
 class Worker(object):
     """
-    A worker that consumes closures from a DeferredQueue.
+    A worker that consumes closures from a DeferredQueue `queue`.
 
     When the closure is received it is executed and its result discarded.
 
-    `tps_delay` is interpreted naively - the worker is not aware of other
-    workers so this must be a fraction of the total delay relative to the
-    number of workers. On average this probably works out that the TPS is
-    maintained closely.
+    I can be provided with `delay_func` which I will use to get a minimum delay
+    time before processing the next job.
 
     I die slowly when asked to, either when my stop() method is called, or None
     is fed to me by my queue.
     """
-    def __init__(self, queue):
+    def __init__(self, queue, delay_func=None):
         self.queue = queue
-        self.tps_delay = 0
+        self._delay_func = delay_func
         self._stopped = False
         self._stop_d = None
 
@@ -83,9 +81,10 @@ class Worker(object):
                 # I was asked to die
                 break
 
-            delay = self.tps_delay - max(
-                (datetime.now() - completed_time).total_seconds(),
-                0)
+            if self._delay_func is not None:
+                delay = self._delay_func() - max(
+                    (datetime.now() - completed_time).total_seconds(),
+                     0)
             if delay > 0:
                 # Don't exceed TPS throttle
                 _ = yield task.deferLater(reactor, delay, job)
@@ -119,6 +118,7 @@ class Fetcher(object):
         self._queue = defer.DeferredQueue()
         self.stats = None
         self.cancelled = False
+        self._delay = None
 
     def add_targets(self, targets):
         """
@@ -161,17 +161,6 @@ class Fetcher(object):
             worker.start()
 
         return d
-
-    @property
-    def tps_delay(self):
-        """
-        Work out the minimum time to delay a request in order to prevent
-        passing TPS threshold
-        """
-        if self._tps is None:
-            return 0
-        else:
-            return (1.0 / self._tps) * len(self.workers)
 
     @property
     def test_run_time(self):
@@ -218,12 +207,33 @@ class Fetcher(object):
         statistics['__all__']['__all__']['run_time'] = self.test_run_time
         return statistics
 
-    def set_tps_delay(self, delay=None):
-        if delay is None:
-            delay = self.tps_delay
+    @property
+    def initial_tps_delay(self):
+        """
+        Work out the minimum time to delay a request in order to prevent
+        passing TPS threshold
+        """
+        if self._tps is None:
+            return 0
+        else:
+            return (1.0 / self._tps) * len(self.workers)
 
-        for worker in self.workers:
-            worker.tps_delay = delay
+    def adaptive_delay(self):
+        """
+        Compare the reported average TPS to our desired TPS and
+        increase/decrease the Worker delay time appropriately
+        """
+        delay = self._delay
+        if delay is None:
+            delay = self.initial_tps_delay
+        if self.stats is not None:
+            mean_tps = self.stats['__all__']['__all__']['chart_points']['tps']['mean']
+            if mean_tps < self._tps:
+                delay -= 0.01
+            elif mean_tps > self._tps:
+                delay += 0.01
+        self._delay = max(delay, 0)
+        return self._delay
 
     def create_workers(self, n):
         """
@@ -237,9 +247,8 @@ class Fetcher(object):
             log.msg("No max active jobs specified, defaulting to %s" % (default,))
             n = default
         log.msg("Spawning %s workers" % (n,))
-        self.workers = [ Worker(self._queue)
+        self.workers = [ Worker(self._queue, self.adaptive_delay)
                          for _ in xrange(n) ]
-        self.set_tps_delay()
 
     @property
     def active_job_count(self):
