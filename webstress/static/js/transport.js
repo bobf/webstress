@@ -100,7 +100,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                                    title: points.title}, true);
                                 }
 
-                                if (points.tps.values && owner.series.length === 1) {
+                                if (points.tps_values && owner.series.length === 1) {
                                     owner.addAxis({
                                         labels: {
                                             style: {
@@ -137,8 +137,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                         zIndex: 3,
                                     });
                                 }
-                                if (points.tps.values) {
-                                    owner.series[1].setData(points.tps.values.slice(), true);
+                                if (points.tps_values) {
+                                    owner.series[1].setData(points.tps_values.slice(), true);
                                 }
                                 owner.series[0].setData(points.values.slice());
                             }

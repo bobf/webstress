@@ -1,8 +1,8 @@
 .PHONY: test
 test:
-	kill `cat twistd.pid 2> /dev/null` >/dev/null 2>&1 || true
+	kill `cat testserver.pid 2> /dev/null` >/dev/null 2>&1 || true
 	rm -rf tests/*.pyc
-	bin/twistd web -p 8000 --path . &&  bin/trial tests
+	bin/twistd --pidfile testserver.pid --logfile testserver.log web -p 8000 --path . &&  bin/trial tests
 	kill `cat twistd.pid`
 
 .PHONY: test-monitor
