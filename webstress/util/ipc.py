@@ -18,6 +18,7 @@ class UpdateStats(amp.Command):
         ("target", amp.String()),
         ("start_time", amp.DateTime()),
         ("end_time", amp.DateTime()),
+        ("content_length", amp.Integer()),
     ]
     response = [('success', amp.Boolean())]
 
@@ -56,6 +57,7 @@ class CalculateStats(amp.Command):
                         ),
                         ('chart_x_axis_type', amp.String()),
                         ('chart_x_axis_title', amp.String()),
+                        ('total_content_length', amp.Integer()),
                 ])),
             ]),
         )
@@ -74,17 +76,17 @@ class StatsAMP(ampoule.child.AMPChild):
         self.timings = {}
 
     @UpdateStats.responder
-    def update(self, uid, category, target, start_time, end_time):
+    def update(self, uid, category, target, start_time, end_time, content_length):
         """
         Store a response round trip-time statistic
         """
         self.timings.setdefault(uid, {}).setdefault(target, {}
             ).setdefault(category, []
-            ).append((start_time, end_time))
+            ).append(((start_time, end_time), content_length))
 
         self.timings[uid].setdefault('__all__', {}
             ).setdefault(category, []
-            ).append((start_time, end_time))
+            ).append(((start_time, end_time), content_length))
 
         return {'success': True}
 
@@ -102,20 +104,24 @@ class StatsAMP(ampoule.child.AMPChild):
             target_stats = {'name': target, 'results': results}
             statistics.append(target_stats)
             all_time_spans = []
+            all_content_lengths = []
             for key in self.timings[uid][target]:
-                time_spans = self.timings[uid][target][key]
+                time_spans, content_lengths = zip(*self.timings[uid][target][key])
 
-                generated = stats.generate(time_spans)
+                generated = stats.generate(list(time_spans), content_lengths)
                 generated['code'] = key
 
                 results.append(generated)
 
+                # We need to calculate totals for all response types and
+                # targets later
                 all_time_spans.extend(time_spans)
+                all_content_lengths.extend(content_lengths)
 
             # All status codes, rather than breakdown above
             all_code_stats = {'name': target, 'results': []}
 
-            generated = stats.generate(all_time_spans)
+            generated = stats.generate(all_time_spans, all_content_lengths)
             generated['code'] = '__all__'
 
             results.append(generated)

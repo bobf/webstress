@@ -30,6 +30,14 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     ).where({name: "__all__"});
                 return data.length ? data[0].results : null;
             },
+            get_all_codes_stats: function () {
+                var my_stats = this.get_my_stats(),
+                    data;
+                if (my_stats) {
+                    data = _(my_stats).where({code: "__all__"});
+                    return data.length ? data[0] : null;
+                }
+            },
             render: function () {
                 var data = this.props.data,
                     targets = data.targets.map(function (target) {
@@ -37,7 +45,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     }),
                     response_codes,
                     state, tps, duration_stats, run_time_stats, run_or_stop,
-                    my_stats = this.get_my_stats();
+                    total_content_length,
+                    my_stats = this.get_my_stats(),
+                    all_codes_stats = this.get_all_codes_stats();
                 WS.targets[data.name] = {};
 
 
@@ -80,6 +90,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
                               <tr>
                                 <td className="run-time nowrap">Run time: {this.state.stats.run_time}</td>
                               </tr>
+                              <tr>
+                                <td className="content-length nowrap">Received: {WS.util.format_bytes(all_codes_stats.total_content_length)}</td>
+                              </tr>
                             </tbody>
                           </table>
                         </div>
@@ -114,6 +127,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                       </tbody>
                       </table>
                       <div className="report">
+                        {total_content_length}
                         {response_codes}
                         {duration_stats}
                       </div>

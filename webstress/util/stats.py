@@ -35,6 +35,12 @@ def histogram(L):
     values, edges = numpy.histogram(L, 5)
     return list(values), list(edges)
 
+def sum(L):
+    """
+    Maybe numpy is faster than built-in sum ... ?
+    """
+    return numpy.sum(L)
+
 # Borrowed from http://stackoverflow.com/a/8991553
 def grouper(n, iterable):
     it = iter(iterable)
@@ -153,10 +159,14 @@ def chart_points_linear(L, num_points=100):
 
     return points
 
-def generate(timespans):
+def generate(timespans, content_lengths):
     """
-    Generate statistics on given time spans. Expects a sequence of 2-element
-    tuples (start, end) as datetime objects
+    Generate statistics on given time spans.
+
+    `timespans` expects a sequence of 2-element tuples (start, end) as datetime
+    objects
+
+    `content_lengths` expects a sequence of integers
     """
     durations = [(end - start).total_seconds()
                  for start, end in timespans]
@@ -182,4 +192,5 @@ def generate(timespans):
             "chart_x_axis_type": chart["x_axis_type"],
             "chart_x_axis_title": chart["x_axis_title"],
             "response_time_points": chart["points"],
+            "total_content_length": sum(content_lengths),
     }

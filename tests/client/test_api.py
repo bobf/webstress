@@ -110,3 +110,12 @@ class TestAPI(twisted.trial.unittest.TestCase):
             'classified'
         )
 
+    @inlineCallbacks
+    def test_content_length_returned(self):
+        config = webstress.configuration.configs["test"]
+        all_stats = yield webstress.client.api.launch_test(
+            config, config["targets"], batch_callback=self.noop)
+
+        stats = all_stats.for_all_targets.for_all_codes
+
+        self.assertTrue(stats["total_content_length"] > 0)

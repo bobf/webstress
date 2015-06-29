@@ -23,10 +23,12 @@ class Client(HTTPClient):
         self._target = target
         self._url = url
         self._stats_callback = stats_callback
+        self._content_length = 0
 
     def dataReceived(self, data):
         # We don't care about the response body, we just want to consume it
-        pass
+        # and store its [actual] size
+        self._content_length += len(data)
 
     def connectionLost(self, reason):
         end = datetime.now()
@@ -38,6 +40,7 @@ class Client(HTTPClient):
                       start_time=self._target.start_time,
                       end_time=end,
                       url=self._url,
+                      content_length=self._content_length,
                       # Let's not treat status codes as numeric values
                       status_code=unicode(self._target.status_code))
 
@@ -191,7 +194,8 @@ class Fetcher(object):
             'category': category,
             'target': result.target.name,
             'start_time': result.start_time,
-            'end_time': result.end_time
+            'end_time': result.end_time,
+            'content_length': result.content_length or 0,
         })
 
     @defer.inlineCallbacks
@@ -311,6 +315,7 @@ class Fetcher(object):
                 target=target,
                 success=False,
                 start_time=target.start_time,
+                content_length=None,
                 end_time=end,
                 url=url,
                 status_code=target.status_code)
@@ -320,6 +325,14 @@ class Fetcher(object):
         return callback, errback
 
     def each_callback(self, result):
+        """
+        I get called every time a result is created (i.e. when a response has
+        been returned and a Result object has been created); I receive this
+        Result and whack it into a deque for `batch_results` pull batches of
+        results from.
+
+        See webstress.common.types.Result
+        """
         self._deque.appendleft(result)
 
     @defer.inlineCallbacks

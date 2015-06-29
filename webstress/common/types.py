@@ -87,6 +87,7 @@ class Result(object):
         self.url = kwargs["url"]
         self.status_code = kwargs["status_code"]
         self.stats = {}
+        self.content_length = kwargs["content_length"]
 
     @property
     def duration(self):
@@ -96,7 +97,7 @@ class Result(object):
         d = dict(
                 (x, getattr(self, x))
                 for x in ["success", "duration", "url", "status_code", "stats",
-                          "start_time", "end_time"])
+                          "start_time", "end_time", "content_length"])
         d['target'] = self.target.to_json()
         return d
 
@@ -148,8 +149,13 @@ class Statistics(object):
     """
     def __init__(self, stats):
         self._stats = stats or {'response_times': []}
-        self.start_time = self._stats.get('start_time')
-        self.run_time = self._stats.get('run_time')
+
+    def __getattr__(self, key):
+        if key in self._stats:
+            return self._stats[key]
+        else:
+            raise AttributeError(
+                "Statistics object doesn't know have a <%s> attribute" % (key,))
 
     @property
     def for_all_targets(self):
