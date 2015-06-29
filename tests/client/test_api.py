@@ -26,7 +26,8 @@ class TestAPI(twisted.trial.unittest.TestCase):
 
         config = webstress.configuration.configs["test"]
         stats = yield webstress.client.api.launch_test(
-            config, config["targets"], batch_callback=batch_callback)
+            config, config["targets"], batch_callback=batch_callback,
+            batch_delay=0.5)
 
         self.assertTrue(fired['fired'])
 
@@ -38,7 +39,8 @@ class TestAPI(twisted.trial.unittest.TestCase):
 
         config = webstress.configuration.configs["test"]
         stats = yield webstress.client.api.launch_test(
-            config, config["targets"], batch_callback=batch_callback)
+            config, config["targets"], batch_callback=batch_callback,
+            batch_delay=0.5)
 
         self.assertEquals(len(all_results), 20)
 
@@ -59,7 +61,8 @@ class TestAPI(twisted.trial.unittest.TestCase):
 
         start = datetime.datetime.now()
 
-        results = yield webstress.client.api.launch_test(config, targets)
+        results = yield webstress.client.api.launch_test(config, targets,
+                        batch_delay=0.5)
 
         self.assertTrue(
             (datetime.datetime.now() - start).total_seconds() >= 2
@@ -68,13 +71,17 @@ class TestAPI(twisted.trial.unittest.TestCase):
     @inlineCallbacks
     def test_statistics(self):
         config = webstress.configuration.configs["test"]
-        stats = yield webstress.client.api.launch_test(config, config["targets"])
+        all_stats = yield webstress.client.api.launch_test(config,
+                          config["targets"], batch_delay=0.5)
+
+        stats = all_stats.for_target("test1").for_code("200")
 
         # Not really sure what useful tests we can run on this. Let's just make
         # sure they exist and have at least some amount of coherence
-        self.assertTrue(stats["test1"]["200"]["nadir"] <= stats["test1"]["200"]["peak"])
-        self.assertTrue(stats["test1"]["200"]["count"] == 10)
-        self.assertTrue(stats["test1"]["200"]["chart_points"]["tps"])
+        self.assertTrue(stats["nadir"] <= stats["peak"])
+        self.assertTrue(stats["count"] == 10)
+        self.assertTrue(stats["tps_mean"])
+        self.assertTrue(all_stats.run_time)
 
     def test_sensitive_params_are_filtered_by_default(self):
         configs = [{"name": "test", "body": sensitive_config}]

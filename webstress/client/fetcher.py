@@ -13,8 +13,8 @@ from twisted.web.http import HTTPClient
 from twisted.internet import defer
 from twisted.python import log
 
-from webstress.common.types import Result, TestPolitelyStopped
-from webstress.util import stats, helpers, ipc
+from webstress.common.types import Result, TestPolitelyStopped, Statistics
+from webstress.util import helpers, ipc
 
 class Client(HTTPClient):
     def __init__(self, deferred, target, url, stats_callback, each_callback=None):
@@ -132,7 +132,7 @@ class Fetcher(object):
         # Order shouldn't matter ?
         random.shuffle(self.targets)
 
-    def results(self, config):
+    def results(self, config, batch_delay):
         """
         This is where everything is initiated and gathered when running a test
         """
@@ -153,7 +153,7 @@ class Fetcher(object):
 
         # Send results to clients in batches every two seconds
         self._batcher = task.LoopingCall(self.batch_results)
-        self._batcher_d = self._batcher.start(2)
+        self._batcher_d = self._batcher.start(batch_delay)
 
         d.addCallback(self.compile_results)
 
@@ -227,7 +227,7 @@ class Fetcher(object):
         delay = self._delay
         if delay is None:
             delay = self.initial_tps_delay
-        all_stats = self._get_all_stats()
+        all_stats = Statistics(self.stats).for_all_targets.for_all_codes
         if all_stats is not None:
             mean_tps = all_stats['tps_mean']
             if mean_tps < self._tps:
@@ -236,21 +236,6 @@ class Fetcher(object):
                 delay += 0.01
         self._delay = max(delay, 0)
         return self._delay
-
-    def _get_all_stats(self):
-        """
-        We generate statistics broken down by target and status code
-        hierarchically. This method provides a convenient way to get the total
-        statistics for all targets and all outcomes.
-        """
-        if self.stats is None:
-            return None
-        else:
-            for data in self.stats['response_times']:
-                if data['name'] == '__all__':
-                    for result in data['results']:
-                        if result['code'] == '__all__':
-                            return result
 
     def create_workers(self, n):
         """
@@ -347,16 +332,19 @@ class Fetcher(object):
         cause huge amounts of traffic
         """
         results = list(self._deque)
+        self._deque.clear()
 
         if results:
             # Get the tip of the results as this will have the most up-to-date
             # stats
-            self.stats = yield self._calculate_statistics()
-            try:
-                if self.batch_callback is not None:
-                    yield self.batch_callback(results, self.stats)
-            finally:
-                self._deque.clear()
+            stats = yield self._calculate_statistics()
+            if stats is not None:
+                # `stats` will be None when a request to calculate statistics
+                # has been made after the stats subprocess has died (even if it
+                # died cleanly)
+                self.stats = stats
+            if self.batch_callback is not None:
+                yield self.batch_callback(results, self.stats)
 
     @defer.inlineCallbacks
     def compile_results(self, result):
@@ -367,7 +355,7 @@ class Fetcher(object):
         # statistics. Otherwise some unprocessed results could still be in
         # the queue.
         yield self.batch_results()
-        defer.returnValue(self.stats)
+        defer.returnValue(Statistics(self.stats))
 
     @defer.inlineCallbacks
     def cleanup(self, result):
@@ -386,6 +374,8 @@ class Fetcher(object):
             # die
             self._queue.put(None)
         done_stopping = yield defer.gatherResults(deferreds)
+
+        yield self.statistician.end_process()
 
         defer.returnValue(result)
 

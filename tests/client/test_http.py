@@ -50,5 +50,5 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
         stats = yield self.client.hit(self.config)
 
         self.assertEquals(
-            stats['__all__']['__all__']['count'], 20
+            stats.for_all_targets.for_all_codes['count'], 20
         )

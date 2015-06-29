@@ -9,12 +9,13 @@ def reload_config():
 def list_configs():
     return webstress.configuration.list_configs(to_json=True)
 
-def launch_test(config, targets, batch_callback=None):
+def launch_test(config, targets, batch_callback=None, batch_delay=2):
     http = webstress.client.http.HTTP(webstress.configuration.encoding)
     for target in targets:
         http.add_target(target)
 
-    return http.hit(batch_callback=batch_callback, config=config)
+    return http.hit(batch_callback=batch_callback, config=config,
+                    batch_delay=batch_delay)
 
 def stop_test(uid):
     for config in webstress.configuration.configs.values():
