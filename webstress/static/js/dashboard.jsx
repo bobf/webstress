@@ -131,7 +131,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         {response_codes}
                         {duration_stats}
                       </div>
-                      <div ref="chart"></div>
+                      <div className={this.state.state === WS.INACTIVE ?  'hidden' : ''} ref="chart"></div>
                       <a href="#" ref="targets_link" onClick={this.toggle_targets} className="targets">
                          <span ref="collapse" className="icon hidden">[-]</span>
                          <span ref="expand" className="icon">[+]</span>

@@ -125,7 +125,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                                         },
                                         title: {
                                             style: {
-                                                color: 'rgba(235, 47, 47, 1)'
+                                                color: 'rgba(235, 47, 47, 1)',
+                                                fontWeight: 'bold'
                                             },
                                             text: 'Reported TPS'
                                         },
@@ -172,6 +173,10 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             yAxis: {
                 title: {
+                    style: {
+                        color: '#4c8f39',
+                        fontWeight: 'bold'
+                    },
                     text: 'Response time'
                 }
             },
