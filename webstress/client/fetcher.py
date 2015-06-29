@@ -112,7 +112,7 @@ class Fetcher(object):
     def __init__(self, encoding):
         self.agent = Agent(reactor)
         self.batch_callback = None
-        self.targets = []
+        self.requests = []
         self.encoding = encoding
         self.timings = {}
         self._deque = collections.deque()
@@ -127,13 +127,15 @@ class Fetcher(object):
 
     def add_targets(self, targets):
         """
-        Add targets to test
+        Create the entire test - duplicate targets as many times as they are
+        configured to be hit, then shuffle the result so we test everything
+        normally-distributed
         """
         for target in targets:
             for _ in xrange(target.hits):
-                self.targets.append(target)
+                self.requests.append(target)
         # Order shouldn't matter ?
-        random.shuffle(self.targets)
+        random.shuffle(self.requests)
 
     def results(self, config, batch_delay):
         """
@@ -146,7 +148,7 @@ class Fetcher(object):
 
         self._tps = config['tps']
 
-        d = defer.gatherResults(self.get(target) for target in self.targets)
+        d = defer.gatherResults(self.get(request) for request in self.requests)
 
         self._gatherer_deferred = d
 
