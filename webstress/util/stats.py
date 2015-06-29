@@ -88,10 +88,8 @@ def chart_points(timespans, durations, num_points=100):
     """
     timespans.sort(key=operator.itemgetter(1))
 
-    earliest = normalise_datetime(
-        min(timespans, key=operator.itemgetter(1))[1])
-    latest = normalise_datetime(
-        max(timespans, key=operator.itemgetter(1))[1])
+    earliest = normalise_datetime(timespans[0][1])
+    latest = normalise_datetime(timespans[-1][1])
 
     if latest - earliest < 1:
         # All responses returned in < 1 second, show number of requests instead
@@ -106,11 +104,11 @@ def chart_points(timespans, durations, num_points=100):
     tps = calculate_tps(timespans, durations)
 
     average_period = (latest - earliest) / num_points
-    periods = iter([
+    periods = [
         (
           earliest + (i * average_period),
           earliest + ((i + 1) * average_period)
-        ) for i in xrange(num_points)])
+        ) for i in xrange(0, num_points)]
 
     chunk = []
     points = []
@@ -119,7 +117,8 @@ def chart_points(timespans, durations, num_points=100):
                       for s, e in timespans)
 
     start, end = timespans.next()
-    for lower_limit, upper_limit in periods:
+
+    for lower_limit, upper_limit in iter(periods):
         chunk = []
         while lower_limit <= end < upper_limit:
             chunk.append(end - start)
@@ -128,7 +127,7 @@ def chart_points(timespans, durations, num_points=100):
             except StopIteration:
                 break
         if chunk:
-            points.append({'x': upper_limit, 'y': peak(chunk) / 1000})
+            points.append({'x': lower_limit, 'y': peak(chunk) / 1000})
 
     return {'x_axis_type': 'datetime',
             'x_axis_title': 'Time',
