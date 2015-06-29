@@ -1,10 +1,12 @@
 import twisted.protocols.amp as amp
 from twisted.python import log
+from twisted.internet import defer, reactor
+from twisted.internet.error import ProcessDone
 
 import ampoule.child
 
 from webstress.util import stats
-from webstress.util.helpers import amp_safe
+from webstress.util.helpers import amp_safe, traps
 
 from datetime import datetime
 
@@ -58,6 +60,10 @@ class CalculateStats(amp.Command):
             ]),
         )
     ]
+
+class Die(amp.Command):
+    arguments = []
+    response = [('success', amp.Boolean())]
 
 class StatsAMP(ampoule.child.AMPChild):
     """
@@ -116,6 +122,11 @@ class StatsAMP(ampoule.child.AMPChild):
 
         return amp_safe({'response_times': statistics})
 
+    @Die.responder
+    def die(self):
+        reactor.stop()
+        return amp_safe({'success': True})
+
 class Statistician(object):
     """
     I abstract away all the IPC/process-spawning and provide a simple async
@@ -125,22 +136,47 @@ class Statistician(object):
         self.child, self.finished = self.start_process()
 
     def start_process(self):
-        starter = ampoule.main.ProcessStarter()
+        starter = ampoule.main.ProcessStarter(packages=['webstress'])
         child, finished = starter.startAMPProcess(StatsAMP)
+
         return child, finished
 
-    def errback(self, method, failure):
+    def errback(self, failure, method):
         """
         Catch-all errback to make sure I don't die when a remote call goes
         wrong.
+
+        This might be a really terrible idea. All errors to do with remote
+        calls get swallowed.
         """
         log.msg("Statistician subprocess got an error on '%s': %s" % (method, failure))
+
+    def end_process(self):
+        """
+        Ask my child to die, return a deferred to notify when complete.
+        """
+        d = self.child.callRemote(Die)
+        d.addErrback(self.catch_polite_death)
+        return d
+
+    @traps(ProcessDone)
+    def catch_polite_death(self, failure):
+        """
+        If my child process died politely then return the process's `finished`
+        deferred to notify the caller when the process has fully died,
+        otherwise return the error.
+        """
+        if failure.value.status == 0:
+            return self.finished
+        else:
+            return failure
 
     def calculate(self, data):
         """
         Request a statistics calculation
         """
         d = self.child.callRemote(CalculateStats, **amp_safe(data))
+        d.addErrback(self.catch_polite_death)
         d.addErrback(self.errback, "calculate")
         return d
 
@@ -149,6 +185,7 @@ class Statistician(object):
         Send data to my worker process
         """
         d = self.child.callRemote(UpdateStats, **amp_safe(data))
+        d.addErrback(self.catch_polite_death)
         d.addErrback(self.errback, "update")
         return d
 

@@ -124,3 +124,74 @@ class TestPolitelyStopped(Exception):
     """
     Used to notify that a test was asked to stop and it had no problems
     """
+
+class Statistics(object):
+    """
+    I provide a nicer interface to a statistics bundle (whose structure is a
+    bit cumbersome in order to be AMP-compliant).
+
+    The underlying bundle is just a dict with a `response_times` key which
+    contains a list of statistics for each target, including "__all__" which is
+    all targets combined.
+
+    Each target contains a list of statistics for each status code, including
+    "__all__" which is all status codes combined.
+
+    I make access to these lists easier to access by doing the iterating and
+    yielding for you.
+
+    e.g.:
+
+    stats = Statistics(stats_obj)
+    stats.for_all_targets.for_code("200")
+    stats.for_target("name1").for_all_codes
+    """
+    def __init__(self, stats):
+        self._stats = stats or {'response_times': []}
+        self.start_time = self._stats.get('start_time')
+        self.run_time = self._stats.get('run_time')
+
+    @property
+    def for_all_targets(self):
+        """
+        Return statistics for all targets combined.
+        """
+        for stats in self._stats["response_times"]:
+            if stats["name"] == "__all__":
+                return TargetStatistics(stats)
+        return TargetStatistics(None)
+
+    def for_target(self, target_name):
+        """
+        Return statistics for a specified target
+        """
+        for stats in self._stats["response_times"]:
+            if stats["name"] == target_name:
+                return TargetStatistics(stats)
+        raise ValueError("No stats found for <%s>" % (target_name,))
+
+class TargetStatistics(object):
+    """
+    A Statistics object provides an interface to all of the statistics for
+    various targets; I provide an interface to the targets for a specific
+    target.
+    """
+    def __init__(self, stats):
+        self._stats = stats or {'results': []}
+
+    @property
+    def for_all_codes(self):
+        """
+        Return statistics for all status codes combined.
+        """
+        for stats in self._stats["results"]:
+            if stats["code"] == "__all__":
+                return stats
+
+    def for_code(self, code):
+        """
+        Return statistics for specified status code.
+        """
+        for stats in self._stats["results"]:
+            if stats["code"] == code:
+                return stats

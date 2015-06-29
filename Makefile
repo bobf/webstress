@@ -3,7 +3,7 @@ test:
 	kill `cat testserver.pid 2> /dev/null` >/dev/null 2>&1 || true
 	rm -rf tests/*.pyc
 	bin/twistd --pidfile testserver.pid --logfile testserver.log web -p 8000 --path . &&  bin/trial tests
-	kill `cat twistd.pid`
+	kill `cat testserver.pid`
 
 .PHONY: test-monitor
 test-monitor:
