@@ -57,10 +57,10 @@ if (typeof window.WS === 'undefined') window.WS = {};
 
                 switch (this.state.state) {
                     case WS.COMPLETE:
-                        state = (<span className="state complete">Complete</span>);
+                        state = (<span className="animated pulse state complete">Complete</span>);
                         break;
                     case WS.PENDING:
-                        state = (<span className="state pending">Pending</span>);
+                        state = (<span className="animated flash infinite state pending">Pending</span>);
                         break;
                     case WS.WAITING:
                         state = (<span className="state waiting">Waiting</span>);
@@ -83,15 +83,18 @@ if (typeof window.WS === 'undefined') window.WS = {};
                     run_time_stats = (
                         <div>
                           <table className="run-times">
+                            <thead>
+                              <tr>
+                                <th>Start Time</th>
+                                <th>Run Time</th>
+                                <th>Data Received</th>
+                              </tr>
+                            </thead>
                             <tbody>
                               <tr>
                                 <td className="start-time nowrap">{this.state.stats.start_time}</td>
-                              </tr>
-                              <tr>
-                                <td className="run-time nowrap">Run time: {this.state.stats.run_time}</td>
-                              </tr>
-                              <tr>
-                                <td className="content-length nowrap">Received: {WS.util.format_bytes(all_codes_stats.total_content_length)}</td>
+                                <td className="run-time nowrap">{this.state.stats.run_time}</td>
+                                <td className="content-length nowrap">{WS.util.format_bytes(all_codes_stats.total_content_length)}</td>
                               </tr>
                             </tbody>
                           </table>
@@ -122,16 +125,19 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <td><div>{state}</div></td>
                         <td>{run_or_stop}</td>
                         <td>{tps}</td>
-                        <td>{run_time_stats}</td>
                       </tr>
                       </tbody>
                       </table>
+                      {run_time_stats}
                       <div className="report">
                         {total_content_length}
                         {response_codes}
                         {duration_stats}
                       </div>
-                      <div className={this.state.state === WS.INACTIVE ?  'hidden' : ''} ref="chart"></div>
+                      <div className={classNames(
+                                        "chart",
+                                        {hidden: _([WS.INACTIVE, WS.WAITING]).contains(this.state.state)
+                                      })} ref="chart"></div>
                       <a href="#" ref="targets_link" onClick={this.toggle_targets} className="targets">
                          <span ref="collapse" className="icon hidden">[-]</span>
                          <span ref="expand" className="icon">[+]</span>
@@ -151,17 +157,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $content.do_layout();
             },
             componentDidUpdate: function (props, state) {
-                var name = this.props.data.name,
-                    targets = WS.targets[name],
-                    i,
-                    key;
-                for (i = 0; i < this.state.stats.response_times.length; i ++) {
-                    target_stats = this.state.stats.response_times[i];
-                    if (target_stats.name !== '__all__') {
-                        targets[target_stats.name].setState(
-                            {stats: target_stats.results});
-                    }
-                }
+                this.update_targets();
                 $content.do_layout();
             },
             reset: function () {
@@ -175,6 +171,23 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 $(this.refs.expand.getDOMNode()).toggleClass("hidden");
                 $(this.refs.targets.getDOMNode()).toggle("fast");
                 $(this.refs.targets_link.getDOMNode()).toggleClass("active");
+            },
+            update_targets: function () {
+                var name = this.props.data.name,
+                    targets = WS.targets[name],
+                    i;
+                if (!this.state.stats.response_times) {
+                    // This can happen when we get an update before anything's
+                    // been calculated
+                    return;
+                }
+                for (i = 0; i < this.state.stats.response_times.length; i ++) {
+                    target_stats = this.state.stats.response_times[i];
+                    if (target_stats.name !== '__all__') {
+                        targets[target_stats.name].setState(
+                            {stats: target_stats.results});
+                    }
+                }
             },
             success_stats: function () {
                 if (!this.state.stats.response_times) {
@@ -488,10 +501,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
     $content.appendTo(document.body);
 
     $content.do_layout = function () {
-        $content.masonry({
-            itemSelector: ".grid-item",
-            columnWidth: 90,
-            gutter: 10
-        });
+        // Used to dynamically re-draw layout here, let's keep the hook for
+        // whatever happens in the future
     };
 })();

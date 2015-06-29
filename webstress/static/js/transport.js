@@ -81,6 +81,9 @@ if (typeof window.WS === 'undefined') window.WS = {};
         $(chart_node).highcharts({
             chart: {
                 animation: true,
+                borderColor: '#a2a2a2',
+                borderWidth: 1,
+                width: 800,
                 events: {
                     load: function () {
                         var series = this.series[0],

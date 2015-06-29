@@ -8,6 +8,10 @@ $white: #fff;
 $black: #000;
 $red: #ed5365;
 $light-blue: #a9c9de;
+$off-white: #fffff3;
+$very-light-blue: #f7fcfb;
+$azure: #f0ffff;
+$very-light-green: #f6fff4;
 $sans-serif: courier;
 
 .block {
@@ -36,8 +40,11 @@ body {
     div.config {
       border-top: 1px dotted $grey;
       border-bottom: 1px dotted $grey;
-      width: 40%;
+      width: 90%;
+      margin: 0 auto;
+      margin-bottom: 20px;
       padding-bottom: 10px;
+      background-color: $off-white;
 
       h1.config-name {
         font-size: 20px;
@@ -168,6 +175,8 @@ body {
 
       div.targets {
         display: none;
+        background-color: $very-light-blue;
+        margin-left: 40px;
       }
 
       a.targets {
@@ -191,10 +200,12 @@ body {
       }
 
       div.target {
-        border-left: 1px solid $grey;
-        border-top: 1px solid $grey;
-        padding: 5px;
+        padding: 10px 5px;
         margin-top: 8px;
+        box-shadow: inset 0px 0px 10px 0px #ABABAB;
+        -webkit-box-shadow: inset 0px 0px 10px 0px #ABABAB;
+        -moz-box-shadow: inset 0px 0px 10px 0px #ABABAB;
+        -o-box-shadow: inset 0px 0px 10px 0px #ABABAB;
 
         a {
           color: $light-blue;
@@ -225,6 +236,10 @@ body {
           }
         }
       }
+
+      div.chart {
+        padding: 10px 20px;
+      }
     }
   }
 }
@@ -254,8 +269,19 @@ td, th {
 }
 
 table.run-times {
+  border: 1px dotted $grey;
+
+  thead th {
+    font-weight: bold;
+    padding: 8px 12px;
+    background-color: $very-light-green;
+    text-align: left;
+  }
+
   tbody td {
     font-family: $sans-serif;
-    background-color: $light-grey;
+    background-color: $very-light-green;
+    text-align: right;
+    padding: 8px 12px;
   }
 }
