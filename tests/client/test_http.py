@@ -6,7 +6,7 @@ import datetime
 import webstress.client.http
 from webstress.config.parser import Config
 
-from ..support.config import std_sample_config, tps_config
+from ..support.config import std_sample_config, tps_config, workers_config
 
 class TestHTTPClient(twisted.trial.unittest.TestCase):
     def setUp(self):
@@ -52,3 +52,16 @@ class TestHTTPClient(twisted.trial.unittest.TestCase):
         self.assertEquals(
             stats.for_all_targets.for_all_codes['count'], 20
         )
+
+    @inlineCallbacks
+    def test_respects_worker_configuration(self):
+        # This smells like a unit test to me but I can't be bothered writing a
+        # web server that tells me how many active requests it has and dealing
+        # with how unreliable that whole process will be, so I'm just going to
+        # check the number of workers on the fetcher object. :(
+        configuration = Config([{"name": "test", "body": workers_config}])
+        self.config = configuration.configs["test"]
+
+        stats = yield self.client.hit(self.config)
+
+        self.assertEquals(len(self.client._fetcher.workers), 7)

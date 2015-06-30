@@ -83,7 +83,7 @@ class Config(object):
 
             config["name"] = name
             config["tps"] = parsed.get("tps")
-            config["max_active_jobs"] = parsed.get("max_active_jobs")
+            config["workers"] = parsed.get("workers")
             config["targets"] = [Target(config, x) for x in parsed["targets"]]
 
             self._check_unique(config)

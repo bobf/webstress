@@ -164,7 +164,7 @@ class Fetcher(object):
 
         d.addCallback(self.cleanup)
 
-        self.create_workers(config['max_active_jobs'])
+        self.create_workers(config['workers'])
         for worker in self.workers:
             worker.start()
 

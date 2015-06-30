@@ -113,3 +113,11 @@ targets:
       - key: name
         value: classified
 """
+
+workers_config = """
+workers: 7
+targets:
+  - name: test
+    base_url: http://localhost:8000/
+    hits: 10
+"""
