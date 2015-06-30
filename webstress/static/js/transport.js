@@ -180,7 +180,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         color: '#4c8f39',
                         fontWeight: 'bold'
                     },
-                    text: 'Response time'
+                    text: 'Response Time'
                 }
             },
             xAxis: {
@@ -203,7 +203,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
             },
             series: [{
                 type: 'areaspline',
-                name: 'Response time',
+                name: 'Response Time',
                 enableMouseTracking: false,
                 data: [{marker: {enabled: false}}],
                 zIndex: 2
