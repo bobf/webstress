@@ -168,29 +168,29 @@ def generate(timespans, content_lengths):
 
     `content_lengths` expects a sequence of integers
     """
-    durations = [(end - start).total_seconds()
+    durations = [end - start
                  for start, end in timespans]
 
     histogram_values, histogram_edges = histogram(durations)
 
-    chart = chart_points(timespans, durations)
+    chart = None #chart_points(timespans, durations)
 
-    tps_mean = chart['tps'].get('mean', 0)
-    tps_points = chart['tps'].get('points', [])
+    tps_mean = None #chart['tps'].get('mean', 0)
+    tps_points = None #chart['tps'].get('points', [])
 
     return {"nadir": nadir(durations),
             "peak": peak(durations),
             "median": median(durations),
             "mean": mean(durations),
-            "percentiles": percentiles(durations),
+            "percentiles": None, #percentiles(durations),
             "std_deviation": std_deviation(durations),
-            "histogram_edges": histogram_edges,
-            "histogram_values": histogram_values,
+            "histogram_edges": None, #histogram_edges,
+            "histogram_values": None, #histogram_values,
             "count": len(durations),
-            "tps_mean": tps_mean,
-            "tps_points": tps_points,
-            "chart_x_axis_type": chart["x_axis_type"],
-            "chart_x_axis_title": chart["x_axis_title"],
-            "response_time_points": chart["points"],
+            "tps_mean": None, #tps_mean,
+            "tps_points": None, #tps_points,
+            "chart_x_axis_type": None, #chart["x_axis_type"],
+            "chart_x_axis_title": None, #chart["x_axis_title"],
+            "response_time_points": None, #chart["points"],
             "total_content_length": sum(content_lengths),
     }

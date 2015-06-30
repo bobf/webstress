@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+from Cython.Build import cythonize
 
 setup(name='WebStress',
       version='1.0',
@@ -13,6 +14,7 @@ setup(name='WebStress',
                 'webstress.interfaces',
                 'webstress.common',
                 'twisted.plugins'],
+      ext_modules=cythonize('webstress/util/cstats.pyx'),
       scripts=['scripts/webstress'],
       install_requires=[
         'twisted==15.0.0',
