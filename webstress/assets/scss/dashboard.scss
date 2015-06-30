@@ -12,6 +12,8 @@ $off-white: #fffff3;
 $very-light-blue: #f4fdff;
 $azure: #f0ffff;
 $very-light-green: #f6fff4;
+$very-light-amber: #fdf6ea;
+$very-light-red: #ffe7e7;
 $sans-serif: courier;
 
 .block {
@@ -110,14 +112,17 @@ body {
 
           &.low {
             color: $green;
+            background-color: $very-light-green;
           }
 
           &.medium {
             color: $amber;
+            background-color: $very-light-amber;
           }
 
           &.high {
             color: $red;
+            background-color: $very-light-red;
           }
         }
 
