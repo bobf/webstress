@@ -9,7 +9,7 @@ $black: #000;
 $red: #ed5365;
 $light-blue: #a9c9de;
 $off-white: #fffff3;
-$very-light-blue: #f7fcfb;
+$very-light-blue: #f4fdff;
 $azure: #f0ffff;
 $very-light-green: #f6fff4;
 $sans-serif: courier;
@@ -175,8 +175,7 @@ body {
 
       div.targets {
         display: none;
-        background-color: $very-light-blue;
-        margin-left: 40px;
+        margin-left: 20px;
       }
 
       a.targets {
@@ -200,12 +199,14 @@ body {
       }
 
       div.target {
-        padding: 10px 5px;
+        padding: 20px;
         margin-top: 8px;
-        box-shadow: inset 0px 0px 10px 0px #ABABAB;
-        -webkit-box-shadow: inset 0px 0px 10px 0px #ABABAB;
-        -moz-box-shadow: inset 0px 0px 10px 0px #ABABAB;
-        -o-box-shadow: inset 0px 0px 10px 0px #ABABAB;
+        box-shadow: inset 0px 0px 4px 0px #ABABAB;
+        -webkit-box-shadow: inset 0px 0px 4px 0px #ABABAB;
+        -moz-box-shadow: inset 0px 0px 4px 0px #ABABAB;
+        -o-box-shadow: inset 0px 0px 4px 0px #ABABAB;
+        background-color: $very-light-blue;
+        width: 60%;
 
         a {
           color: $light-blue;
@@ -217,6 +218,7 @@ body {
 
         table.params {
           margin-top: 5px;
+          background-color: $off-white;
           thead th {
             padding: 5px 8px;
             font-weight: bold;
