@@ -175,8 +175,8 @@ def generate(timespans, content_lengths):
 
     chart = chart_points(timespans, durations)
 
-    tps_mean = chart['tps'].get('mean')
-    tps_points = chart['tps'].get('points')
+    tps_mean = chart['tps'].get('mean', 0)
+    tps_points = chart['tps'].get('points', [])
 
     return {"nadir": nadir(durations),
             "peak": peak(durations),
