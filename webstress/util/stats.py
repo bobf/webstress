@@ -143,7 +143,7 @@ def chart_points_linear(L, num_points=100):
     points = []
     chunks = []
     if len(L) <= num_points:
-        return list(enumerate(L))
+        return [{'x': i, 'y': v} for i, v in enumerate(L)]
 
     chunk_size = len(L) / num_points
 
