@@ -76,7 +76,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                 if (data.tps) {
                     tps = (<div className="tps"><h2 className="nowrap">TPS Throttle: </h2>{data.tps}</div>);
                 } else {
-                    tps = '';
+                    tps = null;
                 }
 
                 if (my_stats.length) {
@@ -104,8 +104,8 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <DurationStats data={my_stats} />
                         );
                 } else {
-                    duration_stats = '';
-                    run_time_stats = '';
+                    duration_stats = null;
+                    run_time_stats = null;
                 }
                 if (!this.is_running()) {
                     run_or_stop = (
@@ -276,7 +276,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <DurationStats data={this.state.stats} />
                         );
                 } else {
-                    duration_stats = '';
+                    duration_stats = null;
                 }
                 return (
                     <div className="target">
@@ -399,7 +399,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         std_deviation = item.std_deviation,
                         tps_mean = item.tps_mean;
                     if (code == '__all__') {
-                        return '';
+                        return null;
                     }
                     return (
                         <tr>
@@ -418,7 +418,7 @@ if (typeof window.WS === 'undefined') window.WS = {};
                         <Histogram data={histogram_data} />
                     );
                 } else {
-                    histogram = '';
+                    histogram = null;
                 }
                 return (
                     <div>
