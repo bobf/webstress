@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 from twisted.protocols.amp import AmpBox, String, Integer, Float, DateTime
 
-from webstress.util.helpers import hash_dict, denormalise_datetime
+from webstress.util.helpers import (hash_dict, denormalise_datetime,
+                                    stringify_stats)
 
 import urlparse
 import urllib
@@ -175,6 +176,12 @@ class Statistics(object):
             if stats["name"] == target_name:
                 return TargetStatistics(stats)
         raise ValueError("No stats found for <%s>" % (target_name,))
+
+    def to_string(self):
+        return stringify_stats(self)
+
+    def __str__(self):
+        return self.to_string()
 
 class TargetStatistics(object):
     """

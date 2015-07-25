@@ -3,6 +3,8 @@ from datetime import datetime
 
 from twisted.protocols import amp
 
+from terminaltables import AsciiTable
+
 def appendable(key, value):
     if isinstance(value, dict):
         return appendable(key, _hash_dict(value))
@@ -121,3 +123,18 @@ def _make_safe(obj, encode=True, encoding='utf8'):
         # tzinfo
         obj = obj.replace(tzinfo=amp.utc)
     return obj
+
+def stringify_stats(stats):
+    """
+    Turn a webstress.common.types.Statistics object into something that can be
+    output to a terminal.
+    """
+    output_fields = ["count", "nadir", "peak", "mean", "median"]
+    results = [str(stats.for_all_targets.for_all_codes[x])
+               for x in output_fields]
+
+    table_data = [
+                  [x.title() for x in output_fields],
+                  results
+                 ]
+    return AsciiTable(table_data).table

@@ -24,5 +24,6 @@ setup(name='WebStress',
         'mock==1.0.1',
         'numpy==1.9.2',
         'ampoule==0.2',
+        'terminaltables==1.0.2',
        ],
      )

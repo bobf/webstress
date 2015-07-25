@@ -28,11 +28,8 @@ def stop_test(uid):
 
 def update_config(configs):
     """
-    I get called by whichever front end loads the application.
-
-    I'm most likely called by:
-
-        twisted/plugins/webstress_webserver_plugin.py
+    Take a list of dicts (see webstress.config.parser.Config docstring for
+    specification) and update the global configuration.
     """
 
     # Takes a list of dicts, each dict is one config
