@@ -14,3 +14,6 @@ doc/
 include/
 lib/
 share/
+
+*.swo
+*.swp

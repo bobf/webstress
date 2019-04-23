@@ -3,19 +3,26 @@ HTTP Stress Testing Client
 Development
 ===========
 
-Makefile assumes virtualenv installed in current directory, i.e. `bin/python`
-should exist.
+One-time setup:
 
-Install libs:
+```
+make setup
+```
 
-    `bin/pip install setup.py`
+Run server:
 
-To run server:
+```
+make run-web
+```
 
-    make run-web
-        or
-    make run-web-daemonize
+or
 
-To run tests:
+```
+make run-web-daemonize
+```
 
-    make test
+Run tests:
+
+```
+make test
+```

@@ -1,3 +1,9 @@
+.PHOYN: setup
+setup:
+	virtualenv --clear --python=python2 .
+	bin/python setup.py install
+	bin/easy_install -U PyOpenSSL
+
 .PHONY: test
 test:
 	kill `cat testserver.pid 2> /dev/null` >/dev/null 2>&1 || true

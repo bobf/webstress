@@ -16,6 +16,7 @@ setup(name='WebStress',
       scripts=['scripts/webstress'],
       install_requires=[
         'twisted==15.0.0',
+        'pyasn1',
         'pyyaml==3.11',
         'pyopenssl==0.14',
         'service_identity==14.0.0',
