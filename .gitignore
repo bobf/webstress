@@ -17,3 +17,5 @@ share/
 
 *.swo
 *.swp
+
+configs/

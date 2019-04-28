@@ -1,4 +1,10 @@
-.PHOYN: setup
+ifneq (,$(wildcard ./bin/twistd))
+  executable:=./bin/twistd
+else
+  executable:=twistd
+endif
+
+.PHONY: setup
 setup:
 	virtualenv --clear --python=python2 .
 	bin/python setup.py install
@@ -22,12 +28,15 @@ install-virtualenv:
 	bin/pip install .
 
 .PHONY: run-web
-run-web:
-	kill `cat twistd.pid 2> /dev/null` >/dev/null 2>&1 || true
-	if [ -f "bin/twistd" ]; then bin/twistd -n webstress --config-dir tests/support/configs; else twistd -n webstress; fi
+run-web: config ?= tests/support/configs
+run-web: kill
+	${executable} -n webstress --config-dir '${config}'
 
 .PHONY: run-web-daemonize
-run-web-daemonize:
-	kill `cat twistd.pid 2> /dev/null` >/dev/null 2>&1 || true
-	if [ -f "bin/twistd" ]; then bin/twistd webstress --config-dir tests/support/configs; else twistd webstress; fi
+run-web-daemonize: config ?= tests/support/configs
+run-web-daemonize: kill
+	${executable} webstress --config-dir '${config}'
 
+.PHONY: kill
+kill:
+	kill $$(cat twistd.pid 2>/dev/null) >/dev/null 2>&1 || :

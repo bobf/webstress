@@ -17,7 +17,7 @@ import webstress.client.api
 class Options(usage.Options):
     port_default = webstress.configuration["http_server"]["port"]
     optParameters = [["port", "p", port_default, "The port number to listen on.", int],
-                     ["config-dir", "c", None, "Config directory (will load *.yaml)"]]
+                     ["config-dir", "c", None, "Config directory (will load *.yaml, *.yml)"]]
 
     optFlags = [["debug", None, "Debug mode - developer only"]]
 
@@ -52,8 +52,8 @@ class MyServiceMaker(object):
 
         configs = []
         for path in os.listdir(os.path.expanduser(config_dir)):
-            if fnmatch.fnmatch(path, "*.yaml"):
-                name = os.path.basename(path).rpartition(".yaml")[0]
+            if fnmatch.fnmatch(path, "*.yaml") or fnmatch.fnmatch(path, "*.yml"):
+                name, _ext = os.path.splitext(os.path.basename(path))
 
                 full_path = os.path.join(config_dir, path)
 
